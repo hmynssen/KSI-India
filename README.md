@@ -3,11 +3,12 @@
 
 # Mask manipulation
 This basic shell script simply implements the routine:
-    . binarize the extracted brain
-    . overlay the binary brain with the desired ROI ( -> call it pial)
-    . remove the structures such as the cerebellum
-    . fill the holes with fslmaths -fillh
-    . perform the subtraction $((pial - ROI)) to get the inner layer ( -> call it wm)
+
+    - binarize the extracted brain
+    - overlay the binary brain with the desired ROI ( -> call it pial)
+    - remove the structures such as the cerebellum
+    - fill the holes with fslmaths -fillh
+    - perform the subtraction $((pial - ROI)) to get the inner layer ( -> call it wm)
 
 I've used an extra step to try to keep only one main component:
 
