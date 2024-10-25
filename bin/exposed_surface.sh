@@ -21,7 +21,9 @@ for subj in ${subjs[@]:start:(finish-start+1)}; do
     mri_convert ${hemi}.pial.filled.mgz ${hemi}.pial.filled.nii
     rm -rf ${hemi}.pial.filled.mgz
     
-    python "${KSI}/rolling_ball.py" ${hemi}.pial.filled.nii -b 15 -d 15 -s exposed_surface.stl
+    python "${KSI}/rolling_ball.py" ${hemi}.pial.filled.nii -b 15 -d 15 -s ${subj}_${hemi}_exposed_surface.stl
+
+    mris_smooth ${subj}_${hemi}_exposed_surface.stl ${subj}_${hemi}_exposed_surface_smooth.stl
 
    
 done
