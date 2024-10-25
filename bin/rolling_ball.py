@@ -1,17 +1,16 @@
-'''
-Adaptation of FreeSurfer's outer_surface in matlab
+"""Adaptation of FreeSurfer's outer_surface in matlab
 
 Inputing a nifti file representing the voxelized pial surface,
 it creates the exposed surface by the rolling ball method.
 
 To dos:
     - allow image size to flexiable; currently only 256x256x256 1mm isovoxel is acceptable
-    - improve marching cubes; it creates too many non-manifold faces and holes
-    - 
+    - improve marching cubes; it creates too many holes and non-manifold faces
+
 
 Heitor Mynssen,
 24/10/2024
-'''
+"""
 
 import os
 import sys
@@ -77,11 +76,11 @@ def rolling_ball(filled_volume, blur_cutoff = 15, ball_diameter = 15, output_sur
 
 
 if __name__=="__main__":
-
     if len(sys.argv)>1:
         parser = argparse.ArgumentParser(
                     prog='Rolling Ball Method',
-                    description=__doc__)
+                    description=__doc__,
+                    formatter_class=argparse.RawTextHelpFormatter)
         parser.add_argument('filename', help='Input file')
         parser.add_argument('-b', '--blur', default=25, type=int, help='Gaussian blur cutoff based on max 255 brithgness')
         parser.add_argument('-d', '--diameter', default=15, type=int, help='Diameter of the ball that will roll over the brain')
