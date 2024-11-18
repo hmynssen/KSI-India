@@ -21,13 +21,13 @@ results_folder="../../results/FB141"
 ##      - White matter surface = WM - E
 ##      - Exposed surface = rolling_ball(Pial surface) ~= convex_hull(Pial surface)
 
-# ../pial_wm_masks.sh -i "${data_folder}/FB141_BrainVolume_SkullStripped.nii.gz" \
-#                     -m "${data_folder}/FB141_BrainMask.nii.gz" \
-#                     -R "${data_folder}/rh_mask.nii.gz" \
-#                     -L "${data_folder}/lh_mask.nii.gz" \
-#                     -G "5" \
-#                     -E "2 6 8 11" \
-#                     -o "${results_folder}"
+../pial_wm_masks.sh -i "${data_folder}/FB141_BrainVolume_SkullStripped.nii.gz" \
+                    -m "${data_folder}/FB141_BrainMask.nii.gz" \
+                    -R "${data_folder}/rh_mask.nii.gz" \
+                    -L "${data_folder}/lh_mask.nii.gz" \
+                    -G "5" \
+                    -E "2 6 8 11" \
+                    -o "${results_folder}"
 
 ## Making the surfaces
 ## This step is the one that need the most improvements
@@ -41,10 +41,10 @@ results_folder="../../results/FB141"
 ##
 ## Last modified, 18/11/2024
 
-# python ../isocontour_surface.py "${results_folder}/rh_pial.nii.gz" -s "rh_pial.stl" -o "${results_folder}"
-# python ../isocontour_surface.py "${results_folder}/lh_pial.nii.gz" -s "lh_pial.stl" -o "${results_folder}"
-# python ../isocontour_surface.py "${results_folder}/rh_wm.nii.gz" -s "rh_wm.stl" -o "${results_folder}"
-# python ../isocontour_surface.py "${results_folder}/lh_wm.nii.gz" -s "lh_wm.stl" -o "${results_folder}"
+python ../isocontour_surface.py "${results_folder}/rh_pial.nii.gz" -s "rh_pial.stl" -o "${results_folder}"
+python ../isocontour_surface.py "${results_folder}/lh_pial.nii.gz" -s "lh_pial.stl" -o "${results_folder}"
+python ../isocontour_surface.py "${results_folder}/rh_wm.nii.gz" -s "rh_wm.stl" -o "${results_folder}"
+python ../isocontour_surface.py "${results_folder}/lh_wm.nii.gz" -s "lh_wm.stl" -o "${results_folder}"
 
 
 
