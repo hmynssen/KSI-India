@@ -18,6 +18,7 @@ $$ Brain = GM + WM - E $$
 Also, we desire to reconstruct 3 surfaces from those masks:
 - $\text{Pial\ surface} = GM + WM - E$
 - $\text{White\ matter\ surface} = WM - E$
+<<<<<<< HEAD
 - $\text{Exposed\ surface} = rolling\textunderscore ball(\text{Pial\ surface}) \approx convex\textunderscore hull(\text{Pial\ surface})$
 
 
@@ -36,3 +37,6 @@ I'm currently calling it the Rolling Ball Method, but originally it had no name.
 
 This method is a bit more precise and cerrtainly more generic than simply using the convex hull. Note that the rolling ball exposed area is always greater than the convex hull area and should be considerably smaller than the pial area for gyrified brains.
 
+=======
+- $\text{Exposed\ surface} = rolling\textunderscore ball(Pial\ surface) ~= convex\textunderscore hull(Pial\ surface)$
+>>>>>>> ec5eedda8797a171eaa816b4fc5cbb3b7a80e30f
