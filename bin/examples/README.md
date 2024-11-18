@@ -17,5 +17,5 @@ $$ Brain = GM + WM - E $$
 
 Also, we desire to reconstruct 3 surfaces from those masks:
 - $\text{Pial\ surface} = GM + WM - E$
-- $White\ matter\ surface = WM - E$
-- $Exposed\ surface = rolling\_ball(Pial\ surface) ~= convex\_hull(Pial\ surface)$
+- $\text{White\ matter\ surface} = WM - E$
+- $\text{Exposed\ surface} = rolling\_ ball(Pial\ surface) ~= convex\_ hull(Pial\ surface)$
