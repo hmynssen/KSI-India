@@ -13,6 +13,7 @@ Usage() {
     echo -e " -E <string> \t\t Erase brightness value; use quotes/string declaration for  \n\t\t\t possible multple values.  "
     echo -e ""
     echo -e "Optional Arguments" 
+    echo -e " -s <string> \t\t Save name; default will be image's basename"
     echo -e " -o <string> \t\t Path to output folder"
     echo -e ""
     echo -e "Toggle Arguments" 
@@ -29,36 +30,38 @@ Usage() {
     exit 1
 }
 
-if [ $# -lt 7 ]; then 
+if [ $# -lt 6 ]; then 
     Usage
     exit 0
 else
     mgz_dir='./'
     out_dir='./'
+    save_name=''
     KSI=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
     while getopts ":i:m:R:L:G:E:s:o:h" opt ; do 
         case $opt in
-            i) mgz_brain_file=`echo $OPTARG` ;;
-            m) mgz_mask_file=`echo $OPTARG` ;;
-            R) rh_file=`echo $OPTARG` ;;
-            L) lh_file=`echo $OPTARG` ;;
-            G) declare -a chosen_seg=(`echo $OPTARG`) ;;
-            E) declare -a arr=(`echo $OPTARG`) ;;
+            i) mgz_brain_file=`echo $OPTARG`; base_name=$(basename ${surf_file});;
+            m) mgz_mask_file=`echo $OPTARG`; mask_base_name=$(basename ${surf_file});;
+            R) rh_file=`echo $OPTARG`;;
+            L) lh_file=`echo $OPTARG`;;
+            G) declare -a chosen_seg=(`echo $OPTARG`);;
+            E) declare -a arr=(`echo $OPTARG`);;
+            s) save_name=`echo $OPTARG`;;
             o) out_dir=`echo $OPTARG`
-                if ! [ -d ${out_dir} ]; then mkdir ${out_dir}; fi ;;
-            \?) echo -e "Invalid option:  -$OPTARG" >&2; Usage; exit 1 ;;
+                if ! [ -d ${out_dir} ]; then mkdir ${out_dir}; fi;;
+            \?) echo -e "Invalid option:  -$OPTARG" >&2; Usage; exit 1;;
         esac 
     done
 fi
 
 ##Catching erros
+if [ "${save_name}" = '' ]; then save_name="${base_name}"; fi
 
-if ! [ -f ${mgz_brain_file} ]; then echo -e "CHECK IMAGE FILE PATH"; Usage; exit 1; fi
-if ! ([ "${mgz_brain_file: -4}" == ".nii" ] || [ "${mgz_brain_file: -7}" == ".nii.gz" ]); then echo "CHECK IMAGE FILE EXTENSION"; Usage; exit 1 ; fi
+if ! [ -f ${base_name} ]; then echo -e "CHECK IMAGE FILE PATH"; Usage; exit 1; fi
+if ! ([ "${base_name: -4}" == ".nii" ] || [ "${base_name: -7}" == ".nii.gz" ]); then echo "CHECK IMAGE ${base_name} FILE EXTENSION"; Usage; exit 1 ; fi
 
-if ! [ -f ${mgz_mask_file} ]; then echo -e " "; echo -e "CHECK MASK FILE PATH"; Usage; exit 1; fi
-if ! ([ "${mgz_mask_file: -4}" == ".nii" ] || [ "${mgz_mask_file: -7}" == ".nii.gz" ]); then echo "${mgz_mask_file: -7}"; exit 1 ; fi
-if ! ([ "${mgz_mask_file: -4}" == ".nii" ] || [ "${mgz_mask_file: -7}" == ".nii.gz" ]); then echo "CHECK MASK FILE EXTENSION"; Usage; exit 1 ; fi
+if ! [ -f ${mask_base_name} ]; then echo -e " "; echo -e "CHECK MASK FILE PATH"; Usage; exit 1; fi
+if ! ([ "${mask_base_name: -4}" == ".nii" ] || [ "${mask_base_name: -7}" == ".nii.gz" ]); then echo "CHECK MASK ${mask_base_name} FILE EXTENSION"; Usage; exit 1 ; fi
 
 if ! [ -f ${rh_file} ]; then echo -e " "; echo -e "CHECK RH/LH FILE PATH"; Usage; exit 1; fi
 if ! ([ ! "${rh_file: -4}" == ".nii" ] || [ "${rh_file: -7}" == ".nii.gz" ]); then echo "CHECK RH/LH FILE EXTENSION"; Usage; exit 1 ; fi
@@ -68,8 +71,8 @@ if ! ([ "${lh_file: -4}" == ".nii" ] || [ "${lh_file: -7}" == ".nii.gz" ]); then
 
 ## copy original image to results folder
 ## Makes life easier
-if ! [ -f ${out_dir}/${mgz_brain_file} ]; then cp "${mgz_brain_file}" "${out_dir}/${mgz_brain_file}"; fi
-if ! [ -f ${out_dir}/${mgz_mask_file} ]; then cp "${mgz_mask_file}" "${out_dir}/${mgz_mask_file}"; fi
+if ! [ -f ${out_dir}/${base_name} ]; then cp "${mgz_brain_file}" "${out_dir}/${base_name}"; fi
+if ! [ -f ${out_dir}/${mask_base_name} ]; then cp "${mgz_mask_file}" "${out_dir}/${mask_base_name}"; fi
 
 
 ## Creates full brain mask

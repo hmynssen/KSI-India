@@ -26,7 +26,7 @@ def isocontour(image,output_dir,output_surface):
         output_name = output_surface
     if not '.stl'==output_surface[-4:]:
         output_name = f'{output_surface}.stl'
-    sys.stderr.write(f'Saving to {output_name}\n')
+    sys.stderr.write(f'Saving surface {output_name}\n in {output_dir}')
     verts, faces, _, _ = marching_cubes(image, 0)
     #reorient to FS standard
     v2 = np.column_stack((128 - verts[:, 0], verts[:, 2] - 128, 128 - verts[:, 1]))
@@ -40,9 +40,11 @@ def isocontour(image,output_dir,output_surface):
     )
     ms.generate_splitting_by_connected_components()
     ms.set_current_mesh(1)
+    pwd = os.getcwd()
     os.chdir(output_dir)
     ms.save_current_mesh(output_surface)
     sys.stderr.write('Done\n\n')
+    os.chdir(pwd)
 
 
 if __name__=="__main__":
@@ -61,7 +63,8 @@ if __name__=="__main__":
         output_name = args.save
         output_dir = args.output
     else:
-        mask_volume = nib.load('../results/FB141/wm.nii.gz')
+        mask_volume = nib.load('./results/FB141/wm.nii.gz')
         img = mask_volume.get_fdata()
         output_name = 'wm.stl'
-        output_dir = '../results/FB141'
+        output_dir = './results/FB141'
+    isocontour(img,output_dir=output_dir,output_surface=output_name)
