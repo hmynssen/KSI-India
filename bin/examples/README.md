@@ -1,4 +1,4 @@
-# Creating the masks for Subject FB141
+# Creating the masks
 Necessary files:
 ```
 - MRI image:                     FB141_BrainVolume_SkullStripped.nii.gz
@@ -18,4 +18,21 @@ $$ Brain = GM + WM - E $$
 Also, we desire to reconstruct 3 surfaces from those masks:
 - $\text{Pial\ surface} = GM + WM - E$
 - $\text{White\ matter\ surface} = WM - E$
-- $\text{Exposed\ surface} = rolling\_ ball(Pial\ surface) ~= convex\_ hull(Pial\ surface)$
+- $\text{Exposed\ surface} = rolling\textunderscore ball(\text{Pial\ surface}) \approx convex\textunderscore hull(\text{Pial\ surface})$
+
+
+# Making the surfaces
+## Pial and White Matter Surfaces
+This step is the one that needs the most improvements. Isocontouring is very simple but very limited when brains gets gyrified. Opposing sides on the pial sulci start to get fully contained in a single voxel, and that's when the isocontour fails. So for a sulci spacing $\approx$ voxel size, we'll need to improve this approach considerably
+
+FreeSurfer might be enough to fix this but will require further coding. I'll update this example later with a fully working code, but let's try this one for now.
+
+Last modified, 18/11/2024
+
+## Exposed Surface
+FreeSurfer used to provide an algorithm for calculating the exposed surface. Unfortunately, they removed this feature, so I reimplemented it in python.
+
+I'm currently calling it the Rolling Ball Method, but originally it had no name. More details can be found in the python script `rolling_ball.py`.
+
+This method is a bit more precise and cerrtainly more generic than simply using the convex hull. Note that the rolling ball exposed area is always greater than the convex hull area and should be considerably smaller than the pial area for gyrified brains.
+

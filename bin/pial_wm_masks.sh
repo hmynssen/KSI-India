@@ -1,6 +1,8 @@
 #!/bin/bash 
 Usage() {
     echo -e ""
+    echo -e "Creates 4 binary masks that can be used for surface reconstruction. Two for each hemisphere of the pial surface and the white matter surface"
+    echo -e ""
     echo -e "Usage: `basename $0` [options] -i <brain_volume.nii.gz> -m <brain_mask.nii.gz> \
     -rh <rh.nii.gz> -lh <lh.nii.gz> -gm <brigthness values> -wm <brigthness values> "
     echo -e ""
@@ -13,19 +15,18 @@ Usage() {
     echo -e " -E <string> \t\t Erase brightness value; use quotes/string declaration for  \n\t\t\t possible multple values.  "
     echo -e ""
     echo -e "Optional Arguments" 
-    echo -e " -s <string> \t\t Save name; default will be image's basename"
     echo -e " -o <string> \t\t Path to output folder"
     echo -e ""
     echo -e "Toggle Arguments" 
     echo -e " -h returns this help message"
     echo -e ""
     echo -e "Example:  ./`basename $0` -i ../data/FB141/FB141_BrainVolume_SkullStripped.nii.gz \
-                -m ../data/FB141/FB141_BrainMask.nii.gz \
-                -rh ../data/FB141/rh.nii.gz \
-                -lh ../data/FB141/lh.nii.gz \
-                -gm \"1\" -wm \"2 6 8 11\" \
-                -o \"../results\" \
-            "
+    -m ../data/FB141/FB141_BrainMask.nii.gz \
+    -rh ../data/FB141/rh.nii.gz \
+    -lh ../data/FB141/lh.nii.gz \
+    -gm \"1\" -wm \"2 6 8 11\" \
+    -o \"../results\" \
+    "
     echo -e ""
     exit 1
 }
@@ -38,15 +39,14 @@ else
     out_dir='./'
     save_name=''
     KSI=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-    while getopts ":i:m:R:L:G:E:s:o:h" opt ; do 
+    while getopts ":i:m:R:L:G:E:o:h" opt ; do 
         case $opt in
-            i) mgz_brain_file=`echo $OPTARG`; base_name=$(basename ${surf_file});;
-            m) mgz_mask_file=`echo $OPTARG`; mask_base_name=$(basename ${surf_file});;
+            i) mgz_brain_file=`echo $OPTARG`; base_name=$(basename ${mgz_brain_file});;
+            m) mgz_mask_file=`echo $OPTARG`; mask_base_name=$(basename ${mgz_mask_file});;
             R) rh_file=`echo $OPTARG`;;
             L) lh_file=`echo $OPTARG`;;
             G) declare -a chosen_seg=(`echo $OPTARG`);;
             E) declare -a arr=(`echo $OPTARG`);;
-            s) save_name=`echo $OPTARG`;;
             o) out_dir=`echo $OPTARG`
                 if ! [ -d ${out_dir} ]; then mkdir ${out_dir}; fi;;
             \?) echo -e "Invalid option:  -$OPTARG" >&2; Usage; exit 1;;
@@ -57,10 +57,10 @@ fi
 ##Catching erros
 if [ "${save_name}" = '' ]; then save_name="${base_name}"; fi
 
-if ! [ -f ${base_name} ]; then echo -e "CHECK IMAGE FILE PATH"; Usage; exit 1; fi
+if ! [ -f ${mgz_brain_file} ]; then echo -e "CHECK IMAGE FILE PATH"; Usage; exit 1; fi
 if ! ([ "${base_name: -4}" == ".nii" ] || [ "${base_name: -7}" == ".nii.gz" ]); then echo "CHECK IMAGE ${base_name} FILE EXTENSION"; Usage; exit 1 ; fi
 
-if ! [ -f ${mask_base_name} ]; then echo -e " "; echo -e "CHECK MASK FILE PATH"; Usage; exit 1; fi
+if ! [ -f ${mgz_mask_file} ]; then echo -e " "; echo -e "CHECK MASK FILE PATH"; Usage; exit 1; fi
 if ! ([ "${mask_base_name: -4}" == ".nii" ] || [ "${mask_base_name: -7}" == ".nii.gz" ]); then echo "CHECK MASK ${mask_base_name} FILE EXTENSION"; Usage; exit 1 ; fi
 
 if ! [ -f ${rh_file} ]; then echo -e " "; echo -e "CHECK RH/LH FILE PATH"; Usage; exit 1; fi
@@ -179,6 +179,9 @@ echo -n "Splitting wm into right and left hemispheres.... "
 fslmaths "${out_dir}/wm.nii.gz" -mul "${rh_file}" "${out_dir}/rh_wm.nii.gz"
 fslmaths "${out_dir}/wm.nii.gz" -mul "${lh_file}" "${out_dir}/lh_wm.nii.gz"
 echo "Done!"
+
+cp "${out_dir}/chosen_mask.nii.gz" "${out_dir}/ribbon.nii.gz"
+cp "${out_dir}/remove_mask.nii.gz" "${out_dir}/non_cortical.nii.gz"
 
 rm -rf "${out_dir}/temp_mask.nii.gz"
 rm -rf "${out_dir}/remove_mask.nii.gz"

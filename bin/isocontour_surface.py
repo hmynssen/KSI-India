@@ -54,7 +54,7 @@ if __name__=="__main__":
                     description=__doc__,
                     formatter_class=argparse.RawTextHelpFormatter)
         parser.add_argument('filename', help='Input file (include full path)')
-        parser.add_argument('-s', '--save', default='output.nii.gz', help='Name of the output file')
+        parser.add_argument('-s', '--save', default='output.stl', help='Name of the output file')
         parser.add_argument('-o', '--output', default='./', help='Output Folder')
         parser.usage = parser.format_help()
         args = parser.parse_args()
