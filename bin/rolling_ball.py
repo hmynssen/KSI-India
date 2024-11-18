@@ -71,7 +71,7 @@ def rolling_ball(filled_volume, blur_cutoff = 15, ball_diameter = 15, output_sur
     )
     ms.generate_splitting_by_connected_components()
     ms.set_current_mesh(1)
-    ms.save_current_mesh(output_surface)
+    ms.save_current_mesh(output_name)
     sys.stderr.write('Done\n\n')
 
 
@@ -82,9 +82,10 @@ if __name__=="__main__":
                     description=__doc__,
                     formatter_class=argparse.RawTextHelpFormatter)
         parser.add_argument('filename', help='Input file')
-        parser.add_argument('-b', '--blur', default=25, type=int, help='Gaussian blur cutoff based on max 255 brithgness')
+        parser.add_argument('-b', '--blur', default=15, type=int, help='Gaussian blur cutoff based on max 255 brithgness')
         parser.add_argument('-d', '--diameter', default=15, type=int, help='Diameter of the ball that will roll over the brain')
         parser.add_argument('-s', '--save', default='output.stl', help='Name of the output file')
+        parser.usage = parser.format_help()
         args = parser.parse_args()
         filled_volume = args.filename
         blur_cutoff = args.blur

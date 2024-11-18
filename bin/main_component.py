@@ -10,7 +10,7 @@ import argparse
 import sys
 
 import numpy as np
-import nibabel as nb
+import nibabel as nib
 from skimage.measure import label
 
 
@@ -38,17 +38,17 @@ if __name__=="__main__":
         parser.add_argument('-o', '--output', default='./', help='Output Folder')
         parser.add_argument('-s', '--save', default='output.nii.gz', help='Name of the output file')
         args = parser.parse_args()
-        mask_volume = nb.load(args.filename)
+        mask_volume = nib.load(args.filename)
         arr = mask_volume.get_fdata()
         output_dir = args.output
         output_name = args.save
     else:
-        mask_volume = nb.load('./results/FB141/wm.nii.gz')
+        mask_volume = nib.load('./results/FB141/wm.nii.gz')
         arr = mask_volume.get_fdata()
         output_dir = './results/FB141'
         output_name = 'wm_main.nii.gz'
     
     arr = main_component(arr)
     if output_name:
-        x = nb.Nifti1Image(arr, mask_volume.affine, mask_volume.header)
-        nb.save(x, f'{output_dir}/{output_name}')
+        x = nib.Nifti1Image(arr, mask_volume.affine, mask_volume.header)
+        nib.save(x, f'{output_dir}/{output_name}')
