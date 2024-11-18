@@ -40,6 +40,7 @@ foo@bar:~$ python ./bin/isocontour_surface.py
 foo@bar:~$ ./bin/exposed_surface.sh
 ```
 
+Please check the documentation in `./bin` and inside each script for more details. Also, the example it self might provide further insights. 
 
 
 
