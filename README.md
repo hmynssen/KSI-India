@@ -4,53 +4,46 @@
 # Dependencies:
 
 ## FreeSurfer
-FreeSurfer is a cortical reconstruction software developed indepently from our lab. Check their own instalation guideline for version 7.0.0 or higher.
+FreeSurfer is a cortical reconstruction software developed indepently from our lab. Check their own [instalation guideline](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) for version 7.0.0 or higher.
 
 Please avoid using any version of FreeSurfer lower than 7.0.0 since it cause conflict.
 
 ## Python Dependencies
- - numpy
- - scipy
- - pymeshlab
- - nibabel
- - scikit-image
-```console
-foo@bar:~$ pip install numpy scipy pymeshlab nibabel scikit-image
+Below, all the python libraries necessary for this project:
+- numpy
+- scipy
+- pymeshlab
+- nibabel
+- scikit-image
+```python
+pip install numpy scipy pymeshlab nibabel scikit-image
 ```
 
 # General Usage
+Inside the `./bin` folder, you'll find several scripts for creating binary masks and surfaces. However, the pipeline I designed should not require going through all of those scripts, instead one may simply copy the shell script example inside `./bin/example` and modify accordingly.
 
+The pipeline itself consists of:
+1. Concatenating the provided masks into:
+    1. Gray matter/Cortical ribbon - will be transformed and used to reconstruct the pial surface
+    2. Non cortical regions - to remove undesired regions from the reconstruction
+    3. White matter - to reconstruct the white matter surface
+2. Extract the main component of each of those three masks
+3. Split them into right and left hemispheres
+4. Reconstruct the pial and white matter surfaces per hemisphere
+5. Compute the exposed surface of the pial surface
 
-# Creating the Exposed Surface
-Adaptation of FreeSurfer's outer_surface in matlab
+To perform those 5 steps, the user should e looking for the following scripts/commands
 
-Inputing a nifti file representing the voxelized pial surface,
-it creates the exposed surface by the rolling ball method.
-
-## To dos:
- - allow image size to flexiable; currently only 256x256x256 1mm isovoxel is acceptable
- - improve marching cubes; it creates too many non-manifold faces and holes
-
-
-
-## Usage of exposed_surface
-This shell creates the Nifti image from the $h.pial surface created with FreeSurfer. The image is binary, with values 0 and 1 only. Inside the rolling ball this will be maped into 0 and 255 respectively.
-
-Simply set the proper SUBJECTSPATH and set the range to loop over the subjects in that folder.
-
-Also, one may choose the blur cutoff value and the diameter of the rolling ball. This first parameter is simply a value of brightness ranging from 0 to 255 used after the gaussian blur (sigma set to 2). The cutoff is the criteria to re-binarize the image.
-
-## Usage of rolling_ball
 ```console
-foo@bar:~$ python rolling_ball.py input_name.nii -b 15 -d 15 -s output.stl
+foo@bar:~$ ./bin/pial_wm_masks.sh
+foo@bar:~$ python ./bin/isocontour_surface.py
+foo@bar:~$ ./bin/exposed_surface.sh
 ```
-With the options:
- - b, --blur        Gaussian blur cutoff (int) based on max 255 brithgness
- - d, --diameter    Diameter (int) of the ball that will roll over the brain
- - s, --save        Name of the output file
+
+
+
 
 # Deprecated
-
 ## Mask manipulation
 This basic shell script simply implements the routine:
  - binarize the extracted brain
