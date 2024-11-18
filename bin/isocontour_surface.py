@@ -19,7 +19,7 @@ import nibabel as nib
 import pymeshlab as ml
 from skimage.measure import marching_cubes
 
-def isocontour(image,output_dir,output_surface):
+def isocontour(image,dimensions,output_dir,output_surface):
     if not output_surface:
         output_name = 'result.stl'
     else:
@@ -28,6 +28,7 @@ def isocontour(image,output_dir,output_surface):
         output_name = f'{output_surface}.stl'
     sys.stderr.write(f'Saving surface {output_name}\n in {output_dir}')
     verts, faces, _, _ = marching_cubes(image, 0)
+    verts = np.multiply(verts,dimensions)
     #reorient to FS standard
     v2 = np.column_stack((128 - verts[:, 0], verts[:, 2] - 128, 128 - verts[:, 1]))
     verts = v2
@@ -60,11 +61,13 @@ if __name__=="__main__":
         args = parser.parse_args()
         mask_volume = nib.load(args.filename)
         img = mask_volume.get_fdata()
+        dim = mask_volume.header["pixdim"][1:4]
         output_name = args.save
         output_dir = args.output
     else:
         mask_volume = nib.load('./results/FB141/wm.nii.gz')
         img = mask_volume.get_fdata()
+        dim = mask_volume.header["pixdim"][1:4]
         output_name = 'wm.stl'
         output_dir = './results/FB141'
-    isocontour(img,output_dir=output_dir,output_surface=output_name)
+    isocontour(img,dimensions=dim,output_dir=output_dir,output_surface=output_name)
