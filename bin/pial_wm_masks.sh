@@ -48,7 +48,7 @@ else
             G) declare -a chosen_seg=(`echo $OPTARG`);;
             E) declare -a arr=(`echo $OPTARG`);;
             o) out_dir=`echo $OPTARG`
-                if ! [ -d ${out_dir} ]; then mkdir "${out_dir}"; fi;;
+                if ! [ -d "${out_dir}" ]; then mkdir "${out_dir}"; fi;;
             h) Usage; exit 0;;
             \?) echo -e "Invalid option:  -$OPTARG" >&2; Usage; exit 1;;
         esac 
@@ -58,22 +58,22 @@ fi
 ##Catching erros
 if [ "${save_name}" = '' ]; then save_name="${base_name}"; fi
 
-if ! [ -f ${mgz_brain_file} ]; then echo -e "CHECK IMAGE FILE PATH"; Usage; exit 1; fi
+if ! [ -f "${mgz_brain_file}" ]; then echo -e "CHECK IMAGE FILE PATH"; Usage; exit 1; fi
 if ! ([ "${base_name: -4}" == ".nii" ] || [ "${base_name: -7}" == ".nii.gz" ]); then echo "CHECK IMAGE ${base_name} FILE EXTENSION"; Usage; exit 1 ; fi
 
-if ! [ -f ${mgz_mask_file} ]; then echo -e " "; echo -e "CHECK MASK FILE PATH"; Usage; exit 1; fi
+if ! [ -f "${mgz_mask_file}" ]; then echo -e " "; echo -e "CHECK MASK FILE PATH"; Usage; exit 1; fi
 if ! ([ "${mask_base_name: -4}" == ".nii" ] || [ "${mask_base_name: -7}" == ".nii.gz" ]); then echo "CHECK MASK ${mask_base_name} FILE EXTENSION"; Usage; exit 1 ; fi
 
-if ! [ -f ${rh_file} ]; then echo -e " "; echo -e "CHECK RH/LH FILE PATH"; Usage; exit 1; fi
+if ! [ -f "${rh_file}" ]; then echo -e " "; echo -e "CHECK RH/LH FILE PATH"; Usage; exit 1; fi
 if ! ([ ! "${rh_file: -4}" == ".nii" ] || [ "${rh_file: -7}" == ".nii.gz" ]); then echo "CHECK RH/LH FILE EXTENSION"; Usage; exit 1 ; fi
 
-if ! [ -f ${lh_file} ]; then echo -e " "; echo -e "CHECK RH/LH FILE PATH"; Usage; exit 1; fi
+if ! [ -f "${lh_file}" ]; then echo -e " "; echo -e "CHECK RH/LH FILE PATH"; Usage; exit 1; fi
 if ! ([ "${lh_file: -4}" == ".nii" ] || [ "${lh_file: -7}" == ".nii.gz" ]); then echo "CHECK RH/LH FILE EXTENSION"; Usage; exit 1 ; fi
 
 ## copy original image to results folder
 ## Makes life easier
-if ! [ -f ${out_dir}/${base_name} ]; then cp "${mgz_brain_file}" "${out_dir}/${base_name}"; fi
-if ! [ -f ${out_dir}/${mask_base_name} ]; then cp "${mgz_mask_file}" "${out_dir}/${mask_base_name}"; fi
+if ! [ -f "${out_dir}/${base_name}" ]; then cp "${mgz_brain_file}" "${out_dir}/${base_name}"; fi
+if ! [ -f "${out_dir}/${mask_base_name}" ]; then cp "${mgz_mask_file}" "${out_dir}/${mask_base_name}"; fi
 
 
 ## Creates full brain mask
