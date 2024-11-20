@@ -1,7 +1,7 @@
 #!/bin/bash 
 
-data_folder="../../data/FB141"
-results_folder="../../results/FB141"
+data_folder="/mnt/c/Users/Heitor Gessner/Documents/Metabio-Personal/KSI-India/data/FB141"
+results_folder="/mnt/c/Users/Heitor Gessner/Documents/Metabio-Personal/KSI-India/results/FB141"
 
 ## Creating the masks for Subject FB141
 ## Necessary files:
@@ -54,3 +54,14 @@ python ../isocontour_surface.py "${results_folder}/lh_wm.nii.gz" -s "lh_wm.stl" 
 
 ../exposed_surface.sh -i "${results_folder}/rh_pial.stl" -o "${results_folder}" -s rh_exposed -S
 ../exposed_surface.sh -i "${results_folder}/lh_pial.stl" -o "${results_folder}" -s lh_exposed -S
+
+
+## FreeSurfer attempt to reconstruct the surfaces
+../freesurfer_surface.sh -s "FB141" \
+                        -i "${data_folder}/FB141_BrainVolume_SkullStripped.nii.gz" \
+                        -m "${data_folder}/FB141_BrainMask.nii.gz" \
+                        -R "${data_folder}/rh_mask.nii.gz" \
+                        -L "${data_folder}/lh_mask.nii.gz" \
+                        -P "${results_folder}/pial.nii.gz" \
+                        -W "${results_folder}/wm.nii.gz" \
+                        -o "${results_folder}"
