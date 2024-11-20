@@ -22,9 +22,9 @@ Usage() {
     echo -e ""
     echo -e "Example:  ./`basename $0` -i ../data/FB141/FB141_BrainVolume_SkullStripped.nii.gz \
     -m ../data/FB141/FB141_BrainMask.nii.gz \
-    -rh ../data/FB141/rh.nii.gz \
-    -lh ../data/FB141/lh.nii.gz \
-    -gm \"1\" -wm \"2 6 8 11\" \
+    -R ../data/FB141/rh.nii.gz \
+    -L ../data/FB141/lh.nii.gz \
+    -G \"1\" -E \"2 6 8 11\" \
     -o \"../results\" \
     "
     echo -e ""
@@ -48,7 +48,7 @@ else
             G) declare -a chosen_seg=(`echo $OPTARG`);;
             E) declare -a arr=(`echo $OPTARG`);;
             o) out_dir=`echo $OPTARG`
-                if ! [ -d ${out_dir} ]; then mkdir ${out_dir}; fi;;
+                if ! [ -d ${out_dir} ]; then mkdir "${out_dir}"; fi;;
             h) Usage; exit 0;;
             \?) echo -e "Invalid option:  -$OPTARG" >&2; Usage; exit 1;;
         esac 

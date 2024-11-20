@@ -40,7 +40,7 @@ else
             B) blur=`echo $OPTARG`;;
             s) save_name=`echo $OPTARG`;;
             o) out_dir=`echo $OPTARG`
-                if ! [ -d ${out_dir} ]; then mkdir ${out_dir}; fi ;;
+                if ! [ -d ${out_dir} ]; then mkdir "${out_dir}"; fi ;;
             S) smooth=true;;
             h) Usage; exit 0;;
             \?) echo -e "Invalid option:  -$OPTARG" >&2; Usage; exit 1;;
