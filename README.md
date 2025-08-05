@@ -58,9 +58,9 @@ Please check the documentation in `./bin` and inside each script for more detail
 For any given subject, you're going to need:
 1. One brain extracted image
 2. One brain segmentation mask (with all the segmentation tissues in a single file)
-2.1. At least 2 tissue types are required in the maks: *gray matter (cortical plate)* and CSF. Note that some tissues, such as the *amygdala* and *hippocampus*, should be considered gray matter for this pipeline.
-2.2. Other tissue types that are not the white matter should all be consired *non-cortical*, such as the *cerebellum* and *thalamus*.
-2.3. Any tissue that is not marked as gray matter or non-cortical will be considered white matter. Do note that tissues fully surround by white matter should be considered white matter it self, such as the *corpus callosum*
+    1. At least 2 tissue types are required in the maks: *gray matter (cortical plate)* and CSF. Note that some tissues, such as the *amygdala* and *hippocampus*, should be considered gray matter for this pipeline.
+    2. Other tissue types that are not the white matter should all be consired *non-cortical*, such as the *cerebellum* and *thalamus*.
+    3. Any tissue that is not marked as gray matter or non-cortical will be considered white matter. Do note that tissues fully surround by white matter should be considered white matter it self, such as the *corpus callosum*
 3. One binary brain mask (which is simply the segmentation mask binarized, i.e., every tissue transformed to be 1 and the rest is 0)
 4. Right and left hemispheres binary mask
 
