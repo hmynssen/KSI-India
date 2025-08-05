@@ -1,7 +1,13 @@
 #!/bin/bash 
 
-data_folder="/mnt/c/Users/Heitor Gessner/Documents/Metabio-Personal/KSI-India/data/FB141"
-results_folder="/mnt/c/Users/Heitor Gessner/Documents/Metabio-Personal/KSI-India/results/FB141"
+data_folder="/mnt/c/Users/Heitor Gessner/Documents/Metabio-Personal/KSI-India/data/45M"
+results_folder="/mnt/c/Users/Heitor Gessner/Documents/Metabio-Personal/KSI-India/results/45M"
+extract_brain="4.5M_vol_masked.nii.gz"
+full_label_mask="4.5M_tissuelables.nii.gz"
+rh_mask="4.5M_rh.nii.gz"
+lh_mask="4.5M_lh.nii.gz"
+gray_matter_or_cp_vals_string="2 9"
+non_cortical_vals="1 4 6 8"
 
 ## Creating the masks for Subject FB141
 ## Necessary files:
@@ -21,12 +27,12 @@ results_folder="/mnt/c/Users/Heitor Gessner/Documents/Metabio-Personal/KSI-India
 ##      - White matter surface = WM - E
 ##      - Exposed surface = rolling_ball(Pial surface) ~= convex_hull(Pial surface)
 
-../pial_wm_masks.sh -i "${data_folder}/FB141_BrainVolume_SkullStripped.nii.gz" \
-                    -m "${data_folder}/FB141_BrainMask.nii.gz" \
-                    -R "${data_folder}/rh_mask.nii.gz" \
-                    -L "${data_folder}/lh_mask.nii.gz" \
-                    -G "5" \
-                    -E "2 6 8 11" \
+../pial_wm_masks.sh -i "${data_folder}/${extract_brain}" \
+                    -m "${data_folder}/${full_label_mask}" \
+                    -R "${data_folder}/${rh_mask}" \
+                    -L "${data_folder}/${lh_mask}" \
+                    -G "${gray_matter_or_cp_vals_string}" \
+                    -E "${non_cortical_vals}" \
                     -o "${results_folder}"
 
 ## Making the surfaces
@@ -41,10 +47,10 @@ results_folder="/mnt/c/Users/Heitor Gessner/Documents/Metabio-Personal/KSI-India
 ##
 ## Last modified, 18/11/2024
 
-python ../isocontour_surface.py "${results_folder}/rh_pial.nii.gz" -s "rh_pial.stl" -o "${results_folder}"
-python ../isocontour_surface.py "${results_folder}/lh_pial.nii.gz" -s "lh_pial.stl" -o "${results_folder}"
-python ../isocontour_surface.py "${results_folder}/rh_wm.nii.gz" -s "rh_wm.stl" -o "${results_folder}"
-python ../isocontour_surface.py "${results_folder}/lh_wm.nii.gz" -s "lh_wm.stl" -o "${results_folder}"
+# python3.10 ../isocontour_surface.py "${results_folder}/rh_pial.nii.gz" -s "rh_pial.stl" -o "${results_folder}"
+# python3.10 ../isocontour_surface.py "${results_folder}/lh_pial.nii.gz" -s "lh_pial.stl" -o "${results_folder}"
+# python3.10 ../isocontour_surface.py "${results_folder}/rh_wm.nii.gz" -s "rh_wm.stl" -o "${results_folder}"
+# python3.10 ../isocontour_surface.py "${results_folder}/lh_wm.nii.gz" -s "lh_wm.stl" -o "${results_folder}"
 
 
 
@@ -52,16 +58,16 @@ python ../isocontour_surface.py "${results_folder}/lh_wm.nii.gz" -s "lh_wm.stl" 
 ## For now, I recommend using the same algorithm.
 ## However, if necessary, it is possible to use the convex hull of the pial hemisphere
 
-../exposed_surface.sh -i "${results_folder}/rh_pial.stl" -o "${results_folder}" -s rh_exposed -S
-../exposed_surface.sh -i "${results_folder}/lh_pial.stl" -o "${results_folder}" -s lh_exposed -S
+# ../exposed_surface.sh -i "${results_folder}/rh_pial.stl" -o "${results_folder}" -s rh_exposed -S
+# ../exposed_surface.sh -i "${results_folder}/lh_pial.stl" -o "${results_folder}" -s lh_exposed -S
 
 
 ## FreeSurfer attempt to reconstruct the surfaces
-../freesurfer_surface.sh -s "FB141" \
-                        -i "${data_folder}/FB141_BrainVolume_SkullStripped.nii.gz" \
-                        -m "${data_folder}/FB141_BrainMask.nii.gz" \
-                        -R "${data_folder}/rh_mask.nii.gz" \
-                        -L "${data_folder}/lh_mask.nii.gz" \
+../freesurfer_surface.sh -s "45M" \
+                        -i "${data_folder}/${extract_brain}" \
+                        -m "${data_folder}/${full_label_mask}" \
+                        -R "${data_folder}/${rh_mask}" \
+                        -L "${data_folder}/${lh_mask}" \
                         -P "${results_folder}/pial.nii.gz" \
                         -W "${results_folder}/wm.nii.gz" \
                         -o "${results_folder}"

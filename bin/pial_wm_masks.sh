@@ -13,6 +13,7 @@ Usage() {
     echo -e " -L <mask.nii.gz> \t Left hemisphere; must be nii or nii.gz file"
     echo -e " -G <string> \t\t GM or Cortical plate brightness value; use quotes/string \n\t\t\t declaration for possible multple values "
     echo -e " -E <string> \t\t Erase brightness value; use quotes/string declaration for  \n\t\t\t possible multple values.  "
+    echo -e " -C <string> \t\t CSF brightness value; use quotes/string declaration for  \n\t\t\t possible multple values.  "
     echo -e ""
     echo -e "Optional Arguments" 
     echo -e " -o <string> \t\t Path to output folder"
@@ -39,14 +40,15 @@ else
     out_dir='./'
     save_name=''
     KSI=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-    while getopts ":i:m:R:L:G:E:o:h" opt ; do 
+    while getopts ":i:m:R:L:G:E:C:o:h" opt ; do 
         case $opt in
-            i) mgz_brain_file=`echo $OPTARG`; base_name=$(basename ${mgz_brain_file});;
-            m) mgz_mask_file=`echo $OPTARG`; mask_base_name=$(basename ${mgz_mask_file});;
+            i) mgz_brain_file=`echo $OPTARG`; base_name=$(basename ${mgz_brain_file##*/});;
+            m) mgz_mask_file=`echo $OPTARG`; mask_base_name=$(basename ${mgz_mask_file##*/});;
             R) rh_file=`echo $OPTARG`;;
             L) lh_file=`echo $OPTARG`;;
             G) declare -a chosen_seg=(`echo $OPTARG`);;
             E) declare -a arr=(`echo $OPTARG`);;
+            C) declare -a csf=(`echo $OPTARG`);;
             o) out_dir=`echo $OPTARG`
                 if ! [ -d "${out_dir}" ]; then mkdir "${out_dir}"; fi;;
             h) Usage; exit 0;;
@@ -86,7 +88,7 @@ echo "Done!"
 ## inside the mask file. 'chosen_mask' will be either all the 6 layers,
 ## or some ROI to be reconstructed.
 echo -n "Creating mask chosen ROIs with value(s) [${chosen_seg[@]}].... "
-fslmaths "${mgz_mask_file}" -uthr 0 ${out_dir}/chosen_mask.nii.gz ## empty mask
+fslmaths "${mgz_mask_file}" -uthr 0 "${out_dir}/chosen_mask.nii.gz" ## empty mask
 for i in "${chosen_seg[@]}"; do
     fslmaths "${mgz_mask_file}" -thr ${i} "${out_dir}/temp_mask.nii.gz"
     fslmaths "${out_dir}/temp_mask.nii.gz" -uthr ${i} "${out_dir}/temp_mask.nii.gz"
@@ -101,13 +103,22 @@ fslmaths "${out_dir}/chosen_mask.nii.gz" -bin "${out_dir}/chosen_mask.nii.gz"
 ## The below comands are ment to artificially improve the quality of faulty segmentation
 ## but will deform good segmention.
 ## Uncomment/comment the line bellow to/not to fill holes
-fslmaths "${out_dir}/chosen_mask.nii.gz" -fillh26 "${out_dir}/chosen_mask.nii.gz"
-## Uncomment/comment the line bellow to/not to expand chosen mask
-fslmaths "${out_dir}/chosen_mask.nii.gz" -dilM "${out_dir}/chosen_mask.nii.gz"
-## Improve outter border precision of the cortical ribbon
-fslmaths "${out_dir}/chosen_mask.nii.gz" -mul "${out_dir}/brain_bin.nii.gz" "${out_dir}/chosen_mask.nii.gz"
+# fslmaths "${out_dir}/chosen_mask.nii.gz" -fillh26 "${out_dir}/chosen_mask.nii.gz"
+# ## Uncomment/comment the line bellow to/not to expand chosen mask
+# fslmaths "${out_dir}/chosen_mask.nii.gz" -dilM "${out_dir}/chosen_mask.nii.gz"
+# ## Improve outter border precision of the cortical ribbon
+# fslmaths "${out_dir}/chosen_mask.nii.gz" -mul "${out_dir}/brain_bin.nii.gz" "${out_dir}/chosen_mask.nii.gz"
 echo "Done!"
 
+echo -n "Creating CSF mask with value(s) [${csf[@]}].... "
+fslmaths "${mgz_mask_file}" -uthr 0 "${out_dir}/csf_mask.nii.gz" ## empty mask
+for i in "${csf[@]}"; do
+    fslmaths "${mgz_mask_file}" -thr ${i} "${out_dir}/temp_mask.nii.gz"
+    fslmaths "${out_dir}/temp_mask.nii.gz" -uthr ${i} "${out_dir}/temp_mask.nii.gz"
+    fslmaths "${out_dir}/csf_mask.nii.gz" -add "${out_dir}/temp_mask.nii.gz" "${out_dir}/csf_mask.nii.gz"
+done
+fslmaths "${out_dir}/csf_mask.nii.gz" -bin "${out_dir}/csf_mask.nii.gz"
+echo "Done!"
 
 ## Erasing undesired segmentations from the 'mgz_mask_file'
 ## This will literaly delete certain regions from the final reconstruction
@@ -126,9 +137,9 @@ fslmaths "${out_dir}/remove_mask.nii.gz" -bin "${out_dir}/remove_mask.nii.gz"
 
 ## Same logic as 'chosen_mask'
 ## Remove these commands when using good enough segmentations
-fslmaths "${out_dir}/remove_mask.nii.gz" -fillh26 "${out_dir}/remove_mask.nii.gz"
-fslmaths "${out_dir}/remove_mask.nii.gz" -dilM "${out_dir}/remove_mask.nii.gz"
-fslmaths "${out_dir}/remove_mask.nii.gz" -mul "${out_dir}/brain_bin.nii.gz" "${out_dir}/remove_mask.nii.gz"
+# fslmaths "${out_dir}/remove_mask.nii.gz" -fillh26 "${out_dir}/remove_mask.nii.gz"
+# fslmaths "${out_dir}/remove_mask.nii.gz" -dilM "${out_dir}/remove_mask.nii.gz"
+# fslmaths "${out_dir}/remove_mask.nii.gz" -mul "${out_dir}/brain_bin.nii.gz" "${out_dir}/remove_mask.nii.gz"
 echo "Done!"
 
 ## Finally we make the deletion
@@ -148,12 +159,12 @@ echo "Done!"
 echo -n "Creating pial mask (includes both gm/cortical plate and wm).... "
 fslmaths "${out_dir}/brain_bin.nii.gz" -add "${out_dir}/chosen_mask.nii.gz" "${out_dir}/pial.nii.gz"
 fslmaths "${out_dir}/pial.nii.gz" -bin "${out_dir}/pial.nii.gz"
-fslmaths "${out_dir}/pial.nii.gz" -fillh26 "${out_dir}/pial.nii.gz"
-fslmaths "${out_dir}/pial.nii.gz" -bin "${out_dir}/pial.nii.gz"
+# fslmaths "${out_dir}/pial.nii.gz" -fillh26 "${out_dir}/pial.nii.gz"
+# fslmaths "${out_dir}/pial.nii.gz" -bin "${out_dir}/pial.nii.gz"
 
 ## This step removes any small islands of pial
 ## Remember that the pial should be made of only one fully connected mask
-python "${KSI}/main_component.py" "${out_dir}/pial.nii.gz" -o "${out_dir}" -s "pial.nii.gz"
+python3.10 "${KSI}/main_component.py" "${out_dir}/pial.nii.gz" -o "${out_dir}" -s "pial.nii.gz"
 echo "Done!"
 
 
@@ -172,7 +183,7 @@ echo -n "Creating wm segmentation mask.... "
 fslmaths "${out_dir}/pial.nii.gz" -sub "${out_dir}/chosen_mask.nii.gz" "${out_dir}/wm.nii.gz"
 fslmaths "${out_dir}/wm.nii.gz" -bin "${out_dir}/wm.nii.gz"
 
-python "${KSI}/main_component.py" "${out_dir}/wm.nii.gz" -o "${out_dir}" -s "wm.nii.gz"
+python3.10 "${KSI}/main_component.py" "${out_dir}/wm.nii.gz" -o "${out_dir}" -s "wm.nii.gz"
 echo "Done!"
 
 

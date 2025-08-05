@@ -65,38 +65,58 @@ if ! [ -d "${out_dir}/${subj}" ]; then mkdir "${out_dir}/${subj}"; fi
 if ! [ -d "${out_dir}/${subj}/mri" ]; then mkdir "${out_dir}/${subj}/mri"; fi
 if ! [ -d "${out_dir}/${subj}/surf" ]; then mkdir "${out_dir}/${subj}/surf"; fi
 if ! [ -d "${out_dir}/${subj}/label" ]; then mkdir "${out_dir}/${subj}/label"; fi
+if ! [ -d "${out_dir}/${subj}/stats" ]; then mkdir "${out_dir}/${subj}/stats"; fi
+if ! [ -d "${out_dir}/${subj}/scripts" ]; then mkdir "${out_dir}/${subj}/scripts"; fi
 
 cd "${out_dir}/${subj}"
 
-
 ## Copying, renaming and conforming stuff to match FreeSurfer's requirements
 cp "${mgz_brain_file}" "./mri/brain.nii.gz"
-mri_convert "./mri/brain.nii.gz" "./mri/brain.mgz" --conform
-cp "./mri/brain.mgz" "./mri/brainmask.mgz"
-cp "./mri/brain.mgz" "./mri/brain.finalsurfs.mgz"
-cp "./mri/brain.mgz" "./mri/norm.mgz"
+fslmaths "../wm.nii.gz" -mul 110 "./mri/brain.nii.gz"
+fslmaths "../ribbon.nii.gz" -mul "${mgz_brain_file}" -inm 1 -mul 50 -nan "./mri/brain_pial.nii.gz" -odt int
+fslmaths "../csf_mask.nii.gz" -mul 255 -nan "./mri/brain_csf_mask.nii.gz" -odt int
+fslmaths "./mri/brain.nii.gz" -add "./mri/brain_pial.nii.gz" -nan "./mri/brain.nii.gz" -odt int
+mri_convert "./mri/brain.nii.gz" "./mri/brain.mgz" #--conform
+fslmaths "./mri/brain.nii.gz" -mul "${lh_file}" -nan "./mri/lh_brain.nii.gz" -odt int
+fslmaths "./mri/brain.nii.gz" -mul "${rh_file}" -nan "./mri/rh_brain.nii.gz" -odt int
+mri_convert "./mri/lh_brain.nii.gz" "./mri/lh.brain.finalsurfs.mgz" #--conform
+mri_convert "./mri/rh_brain.nii.gz" "./mri/rh.brain.finalsurfs.mgz" #--conform
+
+python3.10 "${KSI}/random-noise.py" -p "${out_dir}/ribbon.nii.gz" -w "${out_dir}/wm.nii.gz" -o "${out_dir}/${subj}/mri"
+mri_convert "./mri/brain.finalsurfs.nii.gz" "./mri/brain.finalsurfs.mgz"
+cp "./mri/brain.finalsurfs.mgz" "./mri/norm.mgz"
 rm -rf "./mri/brain.nii.gz"
+rm -rf "./mri/brain.finalsurfs.nii.gz"
+rm -rf "./mri/rh_brain.nii.gz"
+rm -rf "./mri/lh_brain.nii.gz"
+rm -rf "./mri/brain_pial.nii.gz"
+rm -rf "./mri/brain_csf_mask.nii.gz"
 
 cp "${white_file}" "./mri/wm.nii.gz"
-mri_convert "./mri/wm.nii.gz" "./mri/wm.seg.mgz" --conform
+fslmaths "./mri/wm.nii.gz" -mul 110 "./mri/wm.nii.gz"
+mri_convert "./mri/wm.nii.gz" "./mri/wm.seg.mgz" #--conform
 cp "./mri/wm.seg.mgz" "./mri/wm.mgz"
 cp "./mri/wm.seg.mgz" "./mri/wm.asegedit.mgz"
 
-fslmaths "./mri/wm.nii.gz" -mul "${lh_file}" "./mri/lh_wm.nii.gz"
-fslmaths "./mri/lh_wm.nii.gz" -mul 255 "./mri/lh_wm.nii.gz"
-fslmaths "./mri/wm.nii.gz" -mul "${rh_file}" "./mri/rh_wm.nii.gz"
-fslmaths "./mri/rh_wm.nii.gz" -mul 127 "./mri/rh_wm.nii.gz"
-fslmaths "./mri/lh_wm.nii.gz" -add "./mri/rh_wm.nii.gz" "./mri/filled.nii.gz"
-mri_convert "./mri/filled.nii.gz" "./mri/filled.mgz" --conform
-mri_convert "./mri/filled.mgz" "./mri/filled.nii.gz"
-fslmaths "./mri/filled.nii.gz" -thr 255 "./mri/filled-pretess255.nii.gz"
-fslmaths "./mri/filled-pretess255.nii.gz" -uthr 255 "./mri/filled-pretess255.nii.gz"
-fslmaths "./mri/filled.nii.gz" -thr 127 "./mri/filled-pretess127.nii.gz"
-fslmaths "./mri/filled-pretess127.nii.gz" -uthr 127 "./mri/filled-pretess127.nii.gz"
-fslmaths "./mri/filled-pretess127.nii.gz" -add "./mri/filled-pretess127.nii.gz" "./mri/filled.nii.gz"
-mri_convert "./mri/filled.nii.gz" "./mri/filled.mgz"
-rm -f "./mri/wm.nii.gz" "./mri/lh_wm.nii.gz""./mri/rh_wm.nii.gz" "./mri/filled.nii.gz"
-rm -f "./mri/filled-pretess255.nii.gz" "./mri/filled-pretess127.nii.gz"
+fslmaths "${white_file}" -mul "${lh_file}" "./mri/lh_wm.nii.gz"
+fslmaths "./mri/lh_wm.nii.gz" -mul 255 -nan "./mri/lh_wm.nii.gz" -odt int
+fslmaths "${white_file}" -mul "${rh_file}" "./mri/rh_wm.nii.gz"
+fslmaths "./mri/rh_wm.nii.gz" -mul 127 -nan "./mri/rh_wm.nii.gz" -odt int
+fslmaths "./mri/lh_wm.nii.gz" -add "./mri/rh_wm.nii.gz" -nan "./mri/filled.nii.gz" -odt int
+mri_convert "./mri/filled.nii.gz" "./mri/filled.mgz" #--conform
+
+fslmaths "./mri/wm.nii.gz" -mul 0 "./mri/aseg.nii.gz"
+fslmaths "./mri/aseg.nii.gz" -add ../lh_wm.nii.gz -mul 2 "./mri/aseg_lh_wm.nii.gz"
+fslmaths "./mri/aseg.nii.gz" -add ../lh_pial.nii.gz -sub ../lh_wm.nii.gz -mul 3 "./mri/aseg_lh_pial.nii.gz"
+fslmaths "./mri/aseg.nii.gz" -add ../rh_wm.nii.gz -mul 41 "./mri/aseg_rh_wm.nii.gz"
+fslmaths "./mri/aseg.nii.gz" -add ../rh_pial.nii.gz -sub ../rh_wm.nii.gz -mul 42 "./mri/aseg_rh_pial.nii.gz"
+fslmaths "./mri/aseg.nii.gz" -add "./mri/aseg_lh_wm.nii.gz" \
+            -add "./mri/aseg_lh_pial.nii.gz" \
+            -add "./mri/aseg_rh_wm.nii.gz" \
+            -add "./mri/aseg_rh_pial.nii.gz" -nan "./mri/aseg.nii.gz" -odt int
+rm -f "./mri/aseg_lh_wm.nii.gz" "./mri/aseg_lh_pial.nii.gz" "./mri/aseg_rh_wm.nii.gz" "./mri/aseg_rh_pial.nii.gz"
+mri_convert "./mri/aseg.nii.gz" "./mri/aseg.mgz" #--conform
+cp "./mri/aseg.mgz" "./mri/aseg.presurf.mgz"
 
 mri_pretess "./mri/filled.mgz" 255 "./mri/norm.mgz" "./mri/filled-pretess255.mgz"
 mri_tessellate "./mri/filled-pretess255.mgz" 255 "./surf/lh.orig.nofix"
@@ -104,9 +124,14 @@ mri_pretess "./mri/filled.mgz" 127 "./mri/norm.mgz" "./mri/filled-pretess127.mgz
 mri_tessellate "./mri/filled-pretess127.mgz" 127 "./surf/rh.orig.nofix"
 rm -f "./mri/filled-pretess255.mgz" "./mri/filled-pretess127.mgz"
 
+rm -rf "./mri/aseg.nii.gz"
+rm -rf "./mri/filled.nii.gz"
+rm -rf "./mri/lh_wm.nii.gz"
+rm -rf "./mri/rh_wm.nii.gz"
+rm -rf "./mri/wm.nii.gz"
+cd surf
 for hemi in ${hemispheres[@]}; do
-    cd surf
-    
+
     echo ' '
     echo ' '
     echo '----------MAIN COMPONENT---------'
@@ -121,7 +146,7 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo '----------INFLATE---------'
     mris_inflate -no-save-sulc ${hemi}.smoothwm.nofix ${hemi}.inflated.nofix
-    mris_sphere -q ${hemi}.inflated.nofix ${hemi}.qsphere.nofix 
+    mris_sphere -q -seed 1234 ${hemi}.inflated.nofix ${hemi}.qsphere.nofix 
     cp ${hemi}.orig.nofix ${hemi}.orig
     cp ${hemi}.inflated.nofix ${hemi}.inflated
     
@@ -144,12 +169,13 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo ' '
     echo '----------MAKE_SURFACE---------'
-    mris_make_surfaces -noaseg -whiteonly -noaparc -mgz -T1 brain.finalsurfs ${subj} ${hemi}
+    mris_make_surfaces -aseg ../mri/aseg.presurf -whiteonly -noaparc -mgz -T1 brain.finalsurfs ${subj} ${hemi}
+    cp ${hemi}.white ${hemi}.white.preaparc
 
     echo ' '
     echo ' '
     echo '----------SMOOTH2---------'
-    mris_smooth -n 3 -nw ${hemi}.white ${hemi}.smoothwm
+    mris_smooth -n 3 -nw ${hemi}.white.preaparc ${hemi}.smoothwm
 
     echo ' '
     echo ' '
@@ -159,7 +185,7 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo ' '
     echo '----------CURVS1---------'
-    mris_curvature -seed 1234  -w ${hemi}.white
+    mris_curvature -seed 1234  -w ${hemi}.white.preaparc
 
     echo ' '
     echo ' '
@@ -169,7 +195,7 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo ' '
     echo '----------CURVS3---------'
-    mris_curvature_stats -m --writeCurvatureFiles -G -o '../stats/${hemi}.curv.stats' -F smoothwm ${subj} ${hemi} curv sulc
+    mris_curvature_stats -m --writeCurvatureFiles -G -o ../stats/${hemi}.curv.stats -F smoothwm ${subj} ${hemi} curv sulc
 
     echo ' '
     echo ' '
@@ -183,14 +209,17 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo ' '
     echo '----------PIAL SURFACE---------'
-    mris_make_surfaces -orig_white ${hemi}.white -orig_pial ${hemi}.white -noaseg -noaparc -mgz -T1 brain.finalsurfs ${subj} ${hemi}
-
-    mris_convert ${hemi}.pial ${hemi}_pial.stl
-    mris_convert ${hemi}.white ${hemi}_wm.stl
+    #tol=1.0e-04, sigma=2.0, host=unkno, nav=4, nbrs=2, l_repulse=5.000, l_tspring=25.000, l_nspring=1.000, l_intensity=0.200, l_curv=1.000
+    # mris_make_surfaces -max_border_white 100 -min_gray_at_white_border 1 -max_csf 255 -max_gray 105 -max_gray_at_csf_border 75 -min_gray_at_csf_border 10 \
+    #                     -orig_white white.preaparc -orig_pial white.preaparc -aseg ../mri/aseg.presurf -noaparc -mgz -T1 brain.finalsurfs ${subj} ${hemi}
+    # mris_make_surfaces -orig_white white.preaparc -orig_pial white.preaparc -aseg ../mri/aseg.presurf  -noaparc -mgz -T1 ${hemi}.brain.finalsurfs ${subj} ${hemi}
+    mris_make_surfaces -orig_white smoothwm -orig_pial smoothwm  -aseg ../mri/aseg.presurf -noaparc -mgz -T1 ${hemi}.brain.finalsurfs ${subj} ${hemi}
+    mris_convert ${hemi}.pial ${subj}_${hemi}_pial.stl
+    mris_convert ${hemi}.white ${subj}_${hemi}_wm.stl
 done
 
 echo ' '
 echo ' '
 echo '----------Volumetric mask---------'
 # only with both hemispheres
-mris_volmask --aseg_name brain --save_ribbon ${subj}
+mris_volmask --aseg_name aseg.presurf --save_ribbon ${subj}
