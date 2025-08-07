@@ -28,6 +28,6 @@ if __name__=="__main__":
     wm = nib.load(f'{args.white}').get_fdata()
     pial[pial>0] = 1
     wm[wm>0] = 1
-    img = np.random.uniform(-5,+5,wm.shape)*wm+wm*110.0 + np.random.uniform(-5,+5,pial.shape)*pial+pial*60.0
+    img = np.random.uniform(-5,+5,wm.shape)*wm+wm*110.0 + np.random.uniform(-10,+10,pial.shape)*pial+pial*50.0
     x = nib.Nifti1Image(img, volume.affine, volume.header)
     nib.save(x, f'{output_dir}/brain.finalsurfs.nii.gz')

@@ -64,7 +64,7 @@ export SUBJECTS_DIR="${out_dir}"
 if ! [ -d "${out_dir}/${subj}" ]; then mkdir "${out_dir}/${subj}"; fi
 if ! [ -d "${out_dir}/${subj}/mri" ]; then mkdir "${out_dir}/${subj}/mri"; fi
 if ! [ -d "${out_dir}/${subj}/surf" ]; then mkdir "${out_dir}/${subj}/surf"; fi
-if ! [ -d "${out_dir}/${subj}/label" ]; then mkdir "${out_dir}/${subj}/label"; fi
+# if ! [ -d "${out_dir}/${subj}/label" ]; then mkdir "${out_dir}/${subj}/label"; fi
 if ! [ -d "${out_dir}/${subj}/stats" ]; then mkdir "${out_dir}/${subj}/stats"; fi
 if ! [ -d "${out_dir}/${subj}/scripts" ]; then mkdir "${out_dir}/${subj}/scripts"; fi
 
@@ -73,18 +73,22 @@ cd "${out_dir}/${subj}"
 ## Copying, renaming and conforming stuff to match FreeSurfer's requirements
 cp "${mgz_brain_file}" "./mri/brain.nii.gz"
 fslmaths "../wm.nii.gz" -mul 110 "./mri/brain.nii.gz"
-fslmaths "../ribbon.nii.gz" -mul "${mgz_brain_file}" -inm 1 -mul 50 -nan "./mri/brain_pial.nii.gz" -odt int
-fslmaths "../csf_mask.nii.gz" -mul 255 -nan "./mri/brain_csf_mask.nii.gz" -odt int
-fslmaths "./mri/brain.nii.gz" -add "./mri/brain_pial.nii.gz" -nan "./mri/brain.nii.gz" -odt int
+fslmaths "../ribbon.nii.gz" -mul "${mgz_brain_file}" -inm 1 -mul 70 -nan "./mri/brain_pial.nii.gz" 
+fslmaths "./mri/brain.nii.gz" -add "./mri/brain_pial.nii.gz" -nan "./mri/brain.nii.gz"
 mri_convert "./mri/brain.nii.gz" "./mri/brain.mgz" #--conform
-fslmaths "./mri/brain.nii.gz" -mul "${lh_file}" -nan "./mri/lh_brain.nii.gz" -odt int
-fslmaths "./mri/brain.nii.gz" -mul "${rh_file}" -nan "./mri/rh_brain.nii.gz" -odt int
+
+fslmaths "../csf_mask.nii.gz" -mul 255 -nan "./mri/brain_csf_mask.nii.gz" -odt int
+
+python3 "${KSI}/random-noise.py" -p "${out_dir}/ribbon.nii.gz" -w "${out_dir}/wm.nii.gz" -o "${out_dir}/${subj}/mri"
+fslmaths "./mri/brain.finalsurfs.nii.gz" -nan "./mri/brain.finalsurfs.nii.gz"
+mri_convert "./mri/brain.finalsurfs.nii.gz" "./mri/brain.finalsurfs.mgz"
+cp "./mri/brain.finalsurfs.mgz" "./mri/norm.mgz"
+
+fslmaths "./mri/brain.finalsurfs.nii.gz" -mul "${lh_file}" -nan "./mri/lh_brain.nii.gz"
+fslmaths "./mri/brain.finalsurfs.nii.gz" -mul "${rh_file}" -nan "./mri/rh_brain.nii.gz"
 mri_convert "./mri/lh_brain.nii.gz" "./mri/lh.brain.finalsurfs.mgz" #--conform
 mri_convert "./mri/rh_brain.nii.gz" "./mri/rh.brain.finalsurfs.mgz" #--conform
 
-python3.10 "${KSI}/random-noise.py" -p "${out_dir}/ribbon.nii.gz" -w "${out_dir}/wm.nii.gz" -o "${out_dir}/${subj}/mri"
-mri_convert "./mri/brain.finalsurfs.nii.gz" "./mri/brain.finalsurfs.mgz"
-cp "./mri/brain.finalsurfs.mgz" "./mri/norm.mgz"
 rm -rf "./mri/brain.nii.gz"
 rm -rf "./mri/brain.finalsurfs.nii.gz"
 rm -rf "./mri/rh_brain.nii.gz"
@@ -130,13 +134,14 @@ rm -rf "./mri/lh_wm.nii.gz"
 rm -rf "./mri/rh_wm.nii.gz"
 rm -rf "./mri/wm.nii.gz"
 cd surf
+
 for hemi in ${hemispheres[@]}; do
 
     echo ' '
     echo ' '
     echo '----------MAIN COMPONENT---------'
     mris_extract_main_component ${hemi}.orig.nofix ${hemi}.orig.nofix
-
+    cp ${hemi}.orig.nofix ${hemi}.smoothwm.nofix
     echo ' '
     echo ' '
     echo '----------SMOOTH---------'
@@ -145,10 +150,11 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo ' '
     echo '----------INFLATE---------'
-    mris_inflate -no-save-sulc ${hemi}.smoothwm.nofix ${hemi}.inflated.nofix
+    mris_inflate -n 1000 -no-save-sulc ${hemi}.smoothwm.nofix ${hemi}.inflated.nofix
     mris_sphere -q -seed 1234 ${hemi}.inflated.nofix ${hemi}.qsphere.nofix 
     cp ${hemi}.orig.nofix ${hemi}.orig
     cp ${hemi}.inflated.nofix ${hemi}.inflated
+
     
     echo ' '
     echo ' '
@@ -164,56 +170,54 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo '----------INTERSECTION---------'
     mris_remove_intersection ${hemi}.orig ${hemi}.orig
-    rm ${hemi}.inflated
 
-    echo ' '
-    echo ' '
-    echo '----------MAKE_SURFACE---------'
-    mris_make_surfaces -aseg ../mri/aseg.presurf -whiteonly -noaparc -mgz -T1 brain.finalsurfs ${subj} ${hemi}
-    cp ${hemi}.white ${hemi}.white.preaparc
+    # rm ${hemi}.inflated
 
-    echo ' '
-    echo ' '
-    echo '----------SMOOTH2---------'
-    mris_smooth -n 3 -nw ${hemi}.white.preaparc ${hemi}.smoothwm
+    # echo ' '
+    # echo ' '
+    # echo '----------MAKE_SURFACE---------'
+    # mris_make_surfaces -aseg ../mri/aseg.presurf -whiteonly -noaparc -mgz -T1 brain.finalsurfs ${subj} ${hemi}
+    # cp ${hemi}.white ${hemi}.white.preaparc
 
-    echo ' '
-    echo ' '
-    echo '----------INFLATE2---------'
-    mris_inflate ${hemi}.smoothwm ${hemi}.inflated
+    # echo ' '
+    # echo ' '
+    # echo '----------SMOOTH2---------'
+    # mris_smooth -n 3 -nw ${hemi}.white.preaparc ${hemi}.smoothwm
 
-    echo ' '
-    echo ' '
-    echo '----------CURVS1---------'
-    mris_curvature -seed 1234  -w ${hemi}.white.preaparc
+    # echo ' '
+    # echo ' '
+    # echo '----------INFLATE2---------'
+    # mris_inflate ${hemi}.smoothwm ${hemi}.inflated
 
-    echo ' '
-    echo ' '
-    echo '----------CURVS2---------'
-    mris_curvature -seed 1234 -thresh .999 -n -a 5 -w -distances 10 10 ${hemi}.inflated
+    # echo ' '
+    # echo ' '
+    # echo '----------CURVS1---------'
+    # mris_curvature -seed 1234 -w ${hemi}.white.preaparc
 
-    echo ' '
-    echo ' '
-    echo '----------CURVS3---------'
-    mris_curvature_stats -m --writeCurvatureFiles -G -o ../stats/${hemi}.curv.stats -F smoothwm ${subj} ${hemi} curv sulc
+    # echo ' '
+    # echo ' '
+    # echo '----------CURVS2---------'
+    # mris_curvature -seed 1234 -thresh .999 -n -a 5 -w -distances 10 10 ${hemi}.inflated
 
-    echo ' '
-    echo ' '
-    echo '----------RECONALL3---------'
-    mris_sphere -seed 1234  ${hemi}.inflated ${hemi}.sphere
-    mris_register -curv ${hemi}.sphere $FREESURFER_HOME/average/${hemi}.folding.atlas.acfb40.noaparc.i12.2016-08-02.tif ${hemi}.sphere.reg
-    mris_jacobian ${hemi}.white ${hemi}.sphere.reg ${hemi}.jacobian_white
-    mrisp_paint -a 5 $FREESURFER_HOME/average/${hemi}.folding.atlas.acfb40.noaparc.i12.2016-08-02.tif#6 ${hemi}.sphere.reg ${hemi}.avg_curv
-    mris_ca_label -l ../label/${hemi}.cortex.label -aseg ../mri/aseg.presurf.mgz ${subj} ${hemi} ${hemi}.sphere.reg $FREESURFER_HOME/average/${hemi}.curvature.buckner40.filled.desikan_killiany.2010-03-25.gcs ${hemi}.aparc.annot
+    # echo ' '
+    # echo ' '
+    # echo '----------CURVS3---------'
+    # mris_curvature_stats -m --writeCurvatureFiles -G -o ../stats/${hemi}.curv.stats -F smoothwm ${subj} ${hemi} curv sulc
+
+    # echo ' '
+    # echo ' '
+    # echo '----------RECONALL3---------'
+    # mris_sphere -seed 1234  ${hemi}.inflated ${hemi}.sphere
+    # mris_register -curv ${hemi}.sphere $FREESURFER_HOME/average/${hemi}.folding.atlas.acfb40.noaparc.i12.2016-08-02.tif ${hemi}.sphere.reg
+    # mris_jacobian ${hemi}.white ${hemi}.sphere.reg ${hemi}.jacobian_white
+    # mrisp_paint -a 5 $FREESURFER_HOME/average/${hemi}.folding.atlas.acfb40.noaparc.i12.2016-08-02.tif#6 ${hemi}.sphere.reg ${hemi}.avg_curv
+    # mris_ca_label -l ../label/${hemi}.cortex.label -aseg ../mri/aseg.presurf.mgz ${subj} ${hemi} ${hemi}.sphere.reg $FREESURFER_HOME/average/${hemi}.curvature.buckner40.filled.desikan_killiany.2010-03-25.gcs ${hemi}.aparc.annot
 
     echo ' '
     echo ' '
     echo '----------PIAL SURFACE---------'
     #tol=1.0e-04, sigma=2.0, host=unkno, nav=4, nbrs=2, l_repulse=5.000, l_tspring=25.000, l_nspring=1.000, l_intensity=0.200, l_curv=1.000
-    # mris_make_surfaces -max_border_white 100 -min_gray_at_white_border 1 -max_csf 255 -max_gray 105 -max_gray_at_csf_border 75 -min_gray_at_csf_border 10 \
-    #                     -orig_white white.preaparc -orig_pial white.preaparc -aseg ../mri/aseg.presurf -noaparc -mgz -T1 brain.finalsurfs ${subj} ${hemi}
-    # mris_make_surfaces -orig_white white.preaparc -orig_pial white.preaparc -aseg ../mri/aseg.presurf  -noaparc -mgz -T1 ${hemi}.brain.finalsurfs ${subj} ${hemi}
-    mris_make_surfaces -orig_white smoothwm -orig_pial smoothwm  -aseg ../mri/aseg.presurf -noaparc -mgz -T1 ${hemi}.brain.finalsurfs ${subj} ${hemi}
+    mris_make_surfaces -noaseg -noaparc -mgz -T1 ${hemi}.brain.finalsurfs ${subj} ${hemi}
     mris_convert ${hemi}.pial ${subj}_${hemi}_pial.stl
     mris_convert ${hemi}.white ${subj}_${hemi}_wm.stl
 done
@@ -223,3 +227,10 @@ echo ' '
 echo '----------Volumetric mask---------'
 # only with both hemispheres
 mris_volmask --aseg_name aseg.presurf --save_ribbon ${subj}
+mri_convert "../mri/ribbon.mgz" "../mri/ribbon.nii.gz"
+
+echo ' '
+echo ' '
+echo "Surface reconstrution for ${subj} has ended"
+echo ' '
+echo ' '

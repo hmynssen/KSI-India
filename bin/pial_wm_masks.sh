@@ -164,7 +164,7 @@ fslmaths "${out_dir}/pial.nii.gz" -bin "${out_dir}/pial.nii.gz"
 
 ## This step removes any small islands of pial
 ## Remember that the pial should be made of only one fully connected mask
-python3.10 "${KSI}/main_component.py" "${out_dir}/pial.nii.gz" -o "${out_dir}" -s "pial.nii.gz"
+python3 "${KSI}/main_component.py" "${out_dir}/pial.nii.gz" -o "${out_dir}" -s "pial.nii.gz"
 echo "Done!"
 
 
@@ -183,7 +183,7 @@ echo -n "Creating wm segmentation mask.... "
 fslmaths "${out_dir}/pial.nii.gz" -sub "${out_dir}/chosen_mask.nii.gz" "${out_dir}/wm.nii.gz"
 fslmaths "${out_dir}/wm.nii.gz" -bin "${out_dir}/wm.nii.gz"
 
-python3.10 "${KSI}/main_component.py" "${out_dir}/wm.nii.gz" -o "${out_dir}" -s "wm.nii.gz"
+python3 "${KSI}/main_component.py" "${out_dir}/wm.nii.gz" -o "${out_dir}" -s "wm.nii.gz"
 echo "Done!"
 
 
