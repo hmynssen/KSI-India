@@ -156,15 +156,15 @@ echo "Done!"
 ## whole brain, including gm and wm. This is the same defenition
 ## as in FreeSurfer, the Universal Scaling Law and many other approaches.
 ## So we must keep this definition for comparison (and becasue it makes sense)
-echo -n "Creating pial mask (includes both gm/cortical plate and wm).... "
-fslmaths "${out_dir}/brain_bin.nii.gz" -add "${out_dir}/chosen_mask.nii.gz" "${out_dir}/pial.nii.gz"
-fslmaths "${out_dir}/pial.nii.gz" -bin "${out_dir}/pial.nii.gz"
+echo -n "Creating pial_full mask (includes both gm/cortical plate and wm).... "
+fslmaths "${out_dir}/brain_bin.nii.gz" -add "${out_dir}/chosen_mask.nii.gz" "${out_dir}/pial_full.nii.gz"
+fslmaths "${out_dir}/pial_full.nii.gz" -bin "${out_dir}/pial_full.nii.gz"
 # fslmaths "${out_dir}/pial.nii.gz" -fillh26 "${out_dir}/pial.nii.gz"
 # fslmaths "${out_dir}/pial.nii.gz" -bin "${out_dir}/pial.nii.gz"
 
 ## This step removes any small islands of pial
 ## Remember that the pial should be made of only one fully connected mask
-python3 "${KSI}/main_component.py" "${out_dir}/pial.nii.gz" -o "${out_dir}" -s "pial.nii.gz"
+python3 "${KSI}/main_component.py" "${out_dir}/pial_full.nii.gz" -o "${out_dir}" -s "pial_full.nii.gz"
 echo "Done!"
 
 
@@ -173,14 +173,14 @@ echo "Done!"
 ## If this is not the case, add an extra -fillh26 after each
 ## hemisphere
 echo -n "Splitting pial into right and left hemispheres.... "
-fslmaths "${out_dir}/pial.nii.gz" -mul "${rh_file}" "${out_dir}/rh_pial.nii.gz"
-fslmaths "${out_dir}/pial.nii.gz" -mul "${lh_file}" "${out_dir}/lh_pial.nii.gz"
+fslmaths "${out_dir}/pial_full.nii.gz" -mul "${rh_file}" "${out_dir}/rh_pial.nii.gz"
+fslmaths "${out_dir}/pial_full.nii.gz" -mul "${lh_file}" "${out_dir}/lh_pial.nii.gz"
 echo "Done!"
 
-## Here we assume that ribbon + wm = pial
-## Hence, wm = pial - ribbon
+## Here we assume that pial/ribbon + wm = pial_full
+## Hence, wm = pial_full - pial/ribbon
 echo -n "Creating wm segmentation mask.... "
-fslmaths "${out_dir}/pial.nii.gz" -sub "${out_dir}/chosen_mask.nii.gz" "${out_dir}/wm.nii.gz"
+fslmaths "${out_dir}/pial_full.nii.gz" -sub "${out_dir}/chosen_mask.nii.gz" "${out_dir}/wm.nii.gz"
 fslmaths "${out_dir}/wm.nii.gz" -bin "${out_dir}/wm.nii.gz"
 
 python3 "${KSI}/main_component.py" "${out_dir}/wm.nii.gz" -o "${out_dir}" -s "wm.nii.gz"
@@ -192,7 +192,7 @@ fslmaths "${out_dir}/wm.nii.gz" -mul "${rh_file}" "${out_dir}/rh_wm.nii.gz"
 fslmaths "${out_dir}/wm.nii.gz" -mul "${lh_file}" "${out_dir}/lh_wm.nii.gz"
 echo "Done!"
 
-cp "${out_dir}/chosen_mask.nii.gz" "${out_dir}/ribbon.nii.gz"
+cp "${out_dir}/chosen_mask.nii.gz" "${out_dir}/pial.nii.gz"
 cp "${out_dir}/remove_mask.nii.gz" "${out_dir}/non_cortical.nii.gz"
 
 rm -rf "${out_dir}/temp_mask.nii.gz"

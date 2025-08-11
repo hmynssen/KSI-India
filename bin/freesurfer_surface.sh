@@ -12,6 +12,8 @@ Usage() {
     echo -e " -R <mask.nii.gz> \t Right hemisphere; must be nii or nii.gz file"
     echo -e " -L <mask.nii.gz> \t Left hemisphere; must be nii or nii.gz file"
     echo -e " -G <string> \t\t GM or Cortical plate brightness value; use quotes/string \n\t\t\t declaration for possible multple values "
+    echo -e " -P <mask.nii.gz> \t Pial surface; must be nii or nii.gz file"
+    echo -e " -W <string> \t\t GM or Cortical plate brightness value; use quotes/string \n\t\t\t declaration for possible multple values "
     echo -e " -E <string> \t\t Erase brightness value; use quotes/string declaration for  \n\t\t\t possible multple values.  "
     echo -e ""
     echo -e "Optional Arguments" 
@@ -20,7 +22,8 @@ Usage() {
     echo -e "Toggle Arguments" 
     echo -e " -h returns this help message"
     echo -e ""
-    echo -e "Example:  ./`basename $0` -i ../data/FB141/FB141_BrainVolume_SkullStripped.nii.gz \
+    echo -e "Example:  ./`basename $0` -s "FB141" \
+    -i ../data/FB141/FB141_BrainVolume_SkullStripped.nii.gz \
     -m ../data/FB141/FB141_BrainMask.nii.gz \
     -R ../data/FB141/rh.nii.gz \
     -L ../data/FB141/lh.nii.gz \
@@ -68,18 +71,44 @@ if ! [ -d "${out_dir}/${subj}/surf" ]; then mkdir "${out_dir}/${subj}/surf"; fi
 if ! [ -d "${out_dir}/${subj}/stats" ]; then mkdir "${out_dir}/${subj}/stats"; fi
 if ! [ -d "${out_dir}/${subj}/scripts" ]; then mkdir "${out_dir}/${subj}/scripts"; fi
 
+
 cd "${out_dir}/${subj}"
+
+## Checking for overlaping wm and pial masks
+num1=$(fslstats "${pial_file}" -k "${white_file}" -V | grep -oE '[0-9]+([.][0-9]+)?' | head -1)
+
+if ! [ $num1 -eq 0 ]; then
+    echo "Pial and white matter masks are overlaping"
+    exit
+fi
+
+##In case someone skiped the previous file creations and is using this script directly
+##If you used the pial_wm_masks.sh, you should already have this files
+if ! [ -f "../wm.nii.gz" ]; then cp "${white_file}" "../wm.nii.gz"; fi
+if ! [ -f "../pial.nii.gz" ]; then cp "${pial_file}" "../pial.nii.gz"; fi
+if ! [ -f "../brain_bin.nii.gz" ]; then cp "${mgz_mask_file}" "../brain_bin.nii.gz"; fi
+if ! [ -f "../${base_name}" ]; then cp "${mgz_brain_file}" "../${base_name}"; fi
+
+if [[ ! -f "../pial_full.nii.gz" || !  -f "../lh_pial.nii.gz" || !  -f "../rh_pial.nii.gz"  || !  -f "../lh_wm.nii.gz"  || !  -f "../rh_wm.nii.gz" ]]; then
+    fslmaths "${pial_file}" -add "${white_file}" -bin "../pial_full.nii.gz"
+    fslmaths "../pial_full.nii.gz" -mul "${lh_file}" "../lh_pial.nii.gz"
+    fslmaths "../pial_full.nii.gz" -mul "${rh_file}" "../rh_pial.nii.gz"
+    fslmaths "../wm.nii.gz" -mul "${lh_file}" "../lh_wm.nii.gz"
+    fslmaths "../wm.nii.gz" -mul "${rh_file}" "../rh_wm.nii.gz"
+fi
 
 ## Copying, renaming and conforming stuff to match FreeSurfer's requirements
 cp "${mgz_brain_file}" "./mri/brain.nii.gz"
 fslmaths "../wm.nii.gz" -mul 110 "./mri/brain.nii.gz"
-fslmaths "../ribbon.nii.gz" -mul "${mgz_brain_file}" -inm 1 -mul 70 -nan "./mri/brain_pial.nii.gz" 
+fslmaths "${pial_file}" -mul "${mgz_brain_file}" -inm 1 -mul 70 -nan "./mri/brain_pial.nii.gz" 
 fslmaths "./mri/brain.nii.gz" -add "./mri/brain_pial.nii.gz" -nan "./mri/brain.nii.gz"
 mri_convert "./mri/brain.nii.gz" "./mri/brain.mgz" #--conform
 
-fslmaths "../csf_mask.nii.gz" -mul 255 -nan "./mri/brain_csf_mask.nii.gz" -odt int
+if [ -f "../csf_mask.nii.gz" ]; then 
+    fslmaths "../csf_mask.nii.gz" -mul 255 -nan "./mri/brain_csf_mask.nii.gz" -odt int
+fi
 
-python3 "${KSI}/random-noise.py" -p "${out_dir}/ribbon.nii.gz" -w "${out_dir}/wm.nii.gz" -o "${out_dir}/${subj}/mri"
+python3 "${KSI}/random-noise.py" -p "${pial_file}" -w "${white_file}" -o "${out_dir}/${subj}/mri"
 fslmaths "./mri/brain.finalsurfs.nii.gz" -nan "./mri/brain.finalsurfs.nii.gz"
 mri_convert "./mri/brain.finalsurfs.nii.gz" "./mri/brain.finalsurfs.mgz"
 cp "./mri/brain.finalsurfs.mgz" "./mri/norm.mgz"
