@@ -42,8 +42,9 @@ else
     mgz_dir='./'
     out_dir='./'
     save_name=''
+    intensity=0.2
     KSI=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-    while getopts ":s:i:m:P:W:R:L:o:h" opt ; do 
+    while getopts ":s:i:m:P:W:R:L:I:o:h" opt ; do 
         case $opt in
             s) subj=`echo $OPTARG`;;
             i) mgz_brain_file=`echo $OPTARG`; base_name=$(basename ${mgz_brain_file});;
@@ -52,6 +53,7 @@ else
             W) white_file=`echo $OPTARG`;;
             R) rh_file=`echo $OPTARG`;;
             L) lh_file=`echo $OPTARG`;;
+            I) intensity=`echo $OPTARG`;;
             o) out_dir=`echo $OPTARG`
                 if ! [ -d "${out_dir}" ]; then mkdir "${out_dir}"; fi;;
             \?) echo -e "Invalid option:  -$OPTARG" >&2; Usage; exit 1;;
@@ -179,7 +181,7 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo ' '
     echo '----------INFLATE---------'
-    mris_inflate -n 1000 -no-save-sulc ${hemi}.smoothwm.nofix ${hemi}.inflated.nofix
+    mris_inflate -n 100 -no-save-sulc ${hemi}.smoothwm.nofix ${hemi}.inflated.nofix
     mris_sphere -q -seed 1234 ${hemi}.inflated.nofix ${hemi}.qsphere.nofix 
     cp ${hemi}.orig.nofix ${hemi}.orig
     cp ${hemi}.inflated.nofix ${hemi}.inflated
@@ -246,7 +248,7 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo '----------PIAL SURFACE---------'
     #tol=1.0e-04, sigma=2.0, host=unkno, nav=4, nbrs=2, l_repulse=5.000, l_tspring=25.000, l_nspring=1.000, l_intensity=0.200, l_curv=1.000
-    mris_make_surfaces -noaseg -noaparc -mgz -T1 ${hemi}.brain.finalsurfs ${subj} ${hemi}
+    mris_make_surfaces -noaseg -noaparc -intensity ${intensity} -mgz -T1 ${hemi}.brain.finalsurfs ${subj} ${hemi}
     mris_convert ${hemi}.pial ${subj}_${hemi}_pial.stl
     mris_convert ${hemi}.white ${subj}_${hemi}_wm.stl
 done
