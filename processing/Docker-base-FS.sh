@@ -11,36 +11,34 @@ gray_matter_or_cp_vals_string=$7
 non_cortical_vals=$8 
 csf_vals=$9 
 intensity=${10}
+noise_level=${11}
 
-# NEW: Use the passed-in container root paths
-data_folder="${CONTAINER_DATA_ROOT}/${subj}"
-results_folder="${CONTAINER_RESULTS_ROOT}/${subj}" 
+data_folder="${CONTAINER_DATA_ROOT}"
+results_folder="${CONTAINER_RESULTS_ROOT}" 
 
 ## These files should exist in the data folder
 ## With these exact names
-
-
-rh_mask="rh.nii.gz" #not required. I'm using it as a name only
-lh_mask="lh.nii.gz" #not required. I'm using it as a name only
+rh_mask="rh.nii.gz"
+lh_mask="lh.nii.gz"
 
 ## Please check these values as they are based on our previous choice of anotations/labeling
 
-# fslmaths "${data_folder}/${full_label_mask}" -bin "${results_folder}/${subj}_brain_mask.nii.gz"
-# fslmaths "${results_folder}/${subj}_brain_mask.nii.gz" -mul "${data_folder}/${lh_mask_raw}" "${results_folder}/${lh_mask}"
-# fslmaths "${results_folder}/${subj}_brain_mask.nii.gz" -sub "${results_folder}/${lh_mask}" -bin "${results_folder}/${rh_mask}"
+fslmaths "${data_folder}/${full_label_mask}" -bin "${results_folder}/${subj}_brain_mask.nii.gz"
+fslmaths "${results_folder}/${subj}_brain_mask.nii.gz" -mul "${data_folder}/${lh_mask_raw}" "${results_folder}/${lh_mask}"
+fslmaths "${results_folder}/${subj}_brain_mask.nii.gz" -sub "${results_folder}/${lh_mask}" -bin "${results_folder}/${rh_mask}"
 
-# ## Enforcing brain_extraction
-# fslmaths "${data_folder}/${extract_brain}" -mul "${results_folder}/${subj}_brain_mask.nii.gz" "${results_folder}/${subj}_extracted_brain.nii.gz"
+## Enforcing brain_extraction
+fslmaths "${data_folder}/${extract_brain}" -mul "${results_folder}/${subj}_brain_mask.nii.gz" "${results_folder}/${subj}_extracted_brain.nii.gz"
 
-# ## pial_wm_masks.sh (Uses relative path inside /project)
-# /project/bin/pial_wm_masks.sh -i "${results_folder}/${subj}_extracted_brain.nii.gz" \
-#                     -m "${data_folder}/${full_label_mask}" \
-#                     -R "${results_folder}/${rh_mask}" \
-#                     -L "${results_folder}/${lh_mask}" \
-#                     -G "${gray_matter_or_cp_vals_string}" \
-#                     -E "${non_cortical_vals}" \
-#                     -C "${csf_vals}"\
-#                     -o "${results_folder}"
+## pial_wm_masks.sh (Uses relative path inside /project)
+/project/bin/pial_wm_masks.sh -i "${results_folder}/${subj}_extracted_brain.nii.gz" \
+                    -m "${data_folder}/${full_label_mask}" \
+                    -R "${results_folder}/${rh_mask}" \
+                    -L "${results_folder}/${lh_mask}" \
+                    -G "${gray_matter_or_cp_vals_string}" \
+                    -E "${non_cortical_vals}" \
+                    -C "${csf_vals}"\
+                    -o "${results_folder}"
 
 ## freesurfer_surface.sh (Uses relative path inside /project)
 /project/bin/freesurfer_surface.sh -s "${subj}" \
@@ -51,4 +49,8 @@ lh_mask="lh.nii.gz" #not required. I'm using it as a name only
                         -P "${results_folder}/pial.nii.gz" \
                         -W "${results_folder}/wm.nii.gz" \
                         -I ${intensity} \
+                        -n ${noise_level} \
+                        -o "${results_folder}"
+
+/project/bin/mid-surface.sh -s "${subj}" \
                         -o "${results_folder}"

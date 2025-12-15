@@ -18,6 +18,9 @@ Usage() {
     echo -e ""
     echo -e "Optional Arguments" 
     echo -e " -o <string> \t\t Path to output folder"
+    echo -e " -c <toggle> \t\t toggles conform flag (isotropic 1mmx1mmx1mm)"
+    echo -e " -I <int> \t\t Intensity for inflation (0.2 ~ 5; minor adjusts in pial)"
+    echo -e " -n <int> \t\t Noise level to generate inflation (1~100; small values also tend to shrink the surface)"
     echo -e ""
     echo -e "Toggle Arguments" 
     echo -e " -h returns this help message"
@@ -43,8 +46,10 @@ else
     out_dir='./'
     save_name=''
     intensity=0.2
+    conform=0
+    noise_level=10
     KSI=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-    while getopts ":s:i:m:P:W:R:L:I:o:h" opt ; do 
+    while getopts ":s:i:m:P:W:R:L:I:n:o:c:h" opt ; do 
         case $opt in
             s) subj=`echo $OPTARG`;;
             i) mgz_brain_file=`echo $OPTARG`; base_name=$(basename ${mgz_brain_file});;
@@ -54,8 +59,10 @@ else
             R) rh_file=`echo $OPTARG`;;
             L) lh_file=`echo $OPTARG`;;
             I) intensity=`echo $OPTARG`;;
+            n) noise_level=`echo $OPTARG`;;
             o) out_dir=`echo $OPTARG`
                 if ! [ -d "${out_dir}" ]; then mkdir "${out_dir}"; fi;;
+            c) conform=1;;
             \?) echo -e "Invalid option:  -$OPTARG" >&2; Usage; exit 1;;
         esac 
     done
@@ -104,22 +111,31 @@ cp "${mgz_brain_file}" "./mri/brain.nii.gz"
 fslmaths "../wm.nii.gz" -mul 110 "./mri/brain.nii.gz"
 fslmaths "${pial_file}" -mul "${mgz_brain_file}" -inm 1 -mul 70 -nan "./mri/brain_pial.nii.gz" 
 fslmaths "./mri/brain.nii.gz" -add "./mri/brain_pial.nii.gz" -nan "./mri/brain.nii.gz"
-mri_convert "./mri/brain.nii.gz" "./mri/brain.mgz" #--conform
 
 if [ -f "../csf_mask.nii.gz" ]; then 
     fslmaths "../csf_mask.nii.gz" -mul 255 -nan "./mri/brain_csf_mask.nii.gz" -odt int
 fi
 
-python3 "${KSI}/random-noise.py" -p "${pial_file}" -w "${white_file}" -o "${out_dir}/${subj}/mri"
+python3 "${KSI}/random-noise.py" -n ${noise_level} -p "${pial_file}" -w "${white_file}" -o "${out_dir}/${subj}/mri"
 fslmaths "./mri/brain.finalsurfs.nii.gz" -nan "./mri/brain.finalsurfs.nii.gz"
-mri_convert "./mri/brain.finalsurfs.nii.gz" "./mri/brain.finalsurfs.mgz"
-cp "./mri/brain.finalsurfs.mgz" "./mri/norm.mgz"
 
 fslmaths "./mri/brain.finalsurfs.nii.gz" -mul "${lh_file}" -nan "./mri/lh_brain.nii.gz"
 fslmaths "./mri/brain.finalsurfs.nii.gz" -mul "${rh_file}" -nan "./mri/rh_brain.nii.gz"
-mri_convert "./mri/lh_brain.nii.gz" "./mri/lh.brain.finalsurfs.mgz" #--conform
-mri_convert "./mri/rh_brain.nii.gz" "./mri/rh.brain.finalsurfs.mgz" #--conform
 
+if [ $conform -eq 1 ]; then
+    mri_convert "./mri/brain.nii.gz" "./mri/brain.mgz" --conform_size
+    mri_convert "./mri/brain.finalsurfs.nii.gz" "./mri/brain.finalsurfs.mgz" --conform_size
+    mri_convert "./mri/lh_brain.nii.gz" "./mri/lh.brain.finalsurfs.mgz" --conform_size
+    mri_convert "./mri/rh_brain.nii.gz" "./mri/rh.brain.finalsurfs.mgz" --conform_size
+else
+    mri_convert "./mri/brain.nii.gz" "./mri/brain.mgz"
+    mri_convert "./mri/brain.finalsurfs.nii.gz" "./mri/brain.finalsurfs.mgz"
+    mri_convert "./mri/lh_brain.nii.gz" "./mri/lh.brain.finalsurfs.mgz"
+    mri_convert "./mri/rh_brain.nii.gz" "./mri/rh.brain.finalsurfs.mgz"
+fi
+cp "./mri/brain.finalsurfs.mgz" "./mri/norm.mgz"
+
+## Cleaning
 rm -rf "./mri/brain.nii.gz"
 rm -rf "./mri/brain.finalsurfs.nii.gz"
 rm -rf "./mri/rh_brain.nii.gz"
@@ -129,16 +145,12 @@ rm -rf "./mri/brain_csf_mask.nii.gz"
 
 cp "${white_file}" "./mri/wm.nii.gz"
 fslmaths "./mri/wm.nii.gz" -mul 110 "./mri/wm.nii.gz"
-mri_convert "./mri/wm.nii.gz" "./mri/wm.seg.mgz" #--conform
-cp "./mri/wm.seg.mgz" "./mri/wm.mgz"
-cp "./mri/wm.seg.mgz" "./mri/wm.asegedit.mgz"
 
 fslmaths "${white_file}" -mul "${lh_file}" "./mri/lh_wm.nii.gz"
 fslmaths "./mri/lh_wm.nii.gz" -mul 255 -nan "./mri/lh_wm.nii.gz" -odt int
 fslmaths "${white_file}" -mul "${rh_file}" "./mri/rh_wm.nii.gz"
 fslmaths "./mri/rh_wm.nii.gz" -mul 127 -nan "./mri/rh_wm.nii.gz" -odt int
 fslmaths "./mri/lh_wm.nii.gz" -add "./mri/rh_wm.nii.gz" -nan "./mri/filled.nii.gz" -odt int
-mri_convert "./mri/filled.nii.gz" "./mri/filled.mgz" #--conform
 
 fslmaths "./mri/wm.nii.gz" -mul 0 "./mri/aseg.nii.gz"
 fslmaths "./mri/aseg.nii.gz" -add ../lh_wm.nii.gz -mul 2 "./mri/aseg_lh_wm.nii.gz"
@@ -149,9 +161,22 @@ fslmaths "./mri/aseg.nii.gz" -add "./mri/aseg_lh_wm.nii.gz" \
             -add "./mri/aseg_lh_pial.nii.gz" \
             -add "./mri/aseg_rh_wm.nii.gz" \
             -add "./mri/aseg_rh_pial.nii.gz" -nan "./mri/aseg.nii.gz" -odt int
-rm -f "./mri/aseg_lh_wm.nii.gz" "./mri/aseg_lh_pial.nii.gz" "./mri/aseg_rh_wm.nii.gz" "./mri/aseg_rh_pial.nii.gz"
-mri_convert "./mri/aseg.nii.gz" "./mri/aseg.mgz" #--conform
+
+if [ $conform -eq 1 ]; then
+    mri_convert "./mri/wm.nii.gz" "./mri/wm.seg.mgz" --conform_size
+    mri_convert "./mri/filled.nii.gz" "./mri/filled.mgz" --conform_size
+    mri_convert "./mri/aseg.nii.gz" "./mri/aseg.mgz" --conform_size
+else
+    mri_convert "./mri/wm.nii.gz" "./mri/wm.seg.mgz"
+    mri_convert "./mri/filled.nii.gz" "./mri/filled.mgz"
+    mri_convert "./mri/aseg.nii.gz" "./mri/aseg.mgz"
+fi
+cp "./mri/wm.seg.mgz" "./mri/wm.mgz"
+cp "./mri/wm.seg.mgz" "./mri/wm.asegedit.mgz"
 cp "./mri/aseg.mgz" "./mri/aseg.presurf.mgz"
+
+## Cleaning
+rm -f "./mri/aseg_lh_wm.nii.gz" "./mri/aseg_lh_pial.nii.gz" "./mri/aseg_rh_wm.nii.gz" "./mri/aseg_rh_pial.nii.gz"
 
 mri_pretess "./mri/filled.mgz" 255 "./mri/norm.mgz" "./mri/filled-pretess255.mgz"
 mri_tessellate "./mri/filled-pretess255.mgz" 255 "./surf/lh.orig.nofix"
@@ -172,16 +197,32 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo '----------MAIN COMPONENT---------'
     mris_extract_main_component ${hemi}.orig.nofix ${hemi}.orig.nofix
-    cp ${hemi}.orig.nofix ${hemi}.smoothwm.nofix
+    echo ' '
+    echo ' '
+    echo '----------SIMPLIFIER---------'
+    mris_convert ${hemi}.orig.nofix ${hemi}.high_res_mesh.stl
+    python3 "${KSI}/mesh_simplifier.py" -i ${hemi}.high_res_mesh.stl -o "${out_dir}/${subj}/surf" -s ${hemi}.simplified_mesh.stl 
+    rm -f ${hemi}.high_res_mesh.stl
     echo ' '
     echo ' '
     echo '----------SMOOTH---------'
-    mris_smooth -nw ${hemi}.orig.nofix ${hemi}.smoothwm.nofix
+    if [ -f "./${hemi}.simplified_mesh.stl" ]; then
+        # mris_convert ${hemi}.simplified_mesh.stl ${hemi}.orig.nofix
+        python3 "${KSI}/mesh_smooth.py" -i ${hemi}.simplified_mesh.stl -o "${out_dir}/${subj}/surf" -s ${hemi}.simplified_mesh.stl
+        # cp ${hemi}.orig.nofix ${hemi}.smoothwm.nofix
+        # mris_smooth -nw ${hemi}.orig.nofix ${hemi}.smoothwm.nofix
+        mris_convert ${hemi}.simplified_mesh.stl ${hemi}.smoothwm.nofix
+        cp ${hemi}.smoothwm.nofix ${hemi}.orig.nofix
+        rm -f ${hemi}.simplified_mesh.stl
+    else
+        cp ${hemi}.orig.nofix ${hemi}.smoothwm.nofix
+        mris_smooth -nw ${hemi}.orig.nofix ${hemi}.smoothwm.nofix
+    fi
 
     echo ' '
     echo ' '
     echo '----------INFLATE---------'
-    mris_inflate -n 100 -no-save-sulc ${hemi}.smoothwm.nofix ${hemi}.inflated.nofix
+    mris_inflate -n 30 -no-save-sulc ${hemi}.smoothwm.nofix ${hemi}.inflated.nofix
     mris_sphere -q -seed 1234 ${hemi}.inflated.nofix ${hemi}.qsphere.nofix 
     cp ${hemi}.orig.nofix ${hemi}.orig
     cp ${hemi}.inflated.nofix ${hemi}.inflated
@@ -202,23 +243,27 @@ for hemi in ${hemispheres[@]}; do
     echo '----------INTERSECTION---------'
     mris_remove_intersection ${hemi}.orig ${hemi}.orig
 
-    # rm ${hemi}.inflated
+    rm ${hemi}.inflated
 
-    # echo ' '
-    # echo ' '
-    # echo '----------MAKE_SURFACE---------'
-    # mris_make_surfaces -aseg ../mri/aseg.presurf -whiteonly -noaparc -mgz -T1 brain.finalsurfs ${subj} ${hemi}
-    # cp ${hemi}.white ${hemi}.white.preaparc
+    echo ' '
+    echo ' '
+    echo '----------MAKE_SURFACE---------'
+    mris_make_surfaces -aseg ../mri/aseg.presurf -whiteonly -noaparc -mgz -T1 brain.finalsurfs ${subj} ${hemi}
+    cp ${hemi}.white ${hemi}.white.preaparc
 
-    # echo ' '
-    # echo ' '
-    # echo '----------SMOOTH2---------'
-    # mris_smooth -n 3 -nw ${hemi}.white.preaparc ${hemi}.smoothwm
+    echo ' '
+    echo ' '
+    echo '----------SMOOTH2---------'
+    if [ ${intensity} -gt 1]; then
+        python3 "${KSI}/mesh_smooth.py" -i ${subj}_${hemi}_pial.stl -o "${out_dir}/${subj}/surf" -s ${subj}_${hemi}_pial.stl
+    else
+        mris_smooth -n 3 -nw ${hemi}.white.preaparc ${hemi}.smoothwm
+    fi
 
-    # echo ' '
-    # echo ' '
-    # echo '----------INFLATE2---------'
-    # mris_inflate ${hemi}.smoothwm ${hemi}.inflated
+    echo ' '
+    echo ' '
+    echo '----------INFLATE2---------'
+    mris_inflate ${hemi}.smoothwm ${hemi}.inflated
 
     # echo ' '
     # echo ' '
@@ -248,9 +293,13 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo '----------PIAL SURFACE---------'
     #tol=1.0e-04, sigma=2.0, host=unkno, nav=4, nbrs=2, l_repulse=5.000, l_tspring=25.000, l_nspring=1.000, l_intensity=0.200, l_curv=1.000
-    mris_make_surfaces -noaseg -noaparc -intensity ${intensity} -mgz -T1 ${hemi}.brain.finalsurfs ${subj} ${hemi}
+    mris_make_surfaces -orig_white white.preaparc -orig_pial white.preaparc -noaseg -noaparc -intensity ${intensity} -mgz -T1 ${hemi}.brain.finalsurfs ${subj} ${hemi}
     mris_convert ${hemi}.pial ${subj}_${hemi}_pial.stl
     mris_convert ${hemi}.white ${subj}_${hemi}_wm.stl
+    if [ $(bc <<< "${intensity} >= 0.5") -eq 1 ]; then
+        python3 "${KSI}/mesh_smooth.py" -i ${subj}_${hemi}_pial.stl -o "${out_dir}/${subj}/surf" -s ${subj}_${hemi}_pial.stl
+        python3 "${KSI}/mesh_smooth.py" -i ${subj}_${hemi}_wm.stl -o "${out_dir}/${subj}/surf" -s ${subj}_${hemi}_wm.stl
+    fi
 done
 
 echo ' '

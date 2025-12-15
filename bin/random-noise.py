@@ -18,16 +18,20 @@ if __name__=="__main__":
         parser.add_argument('-p', '--pial', default='./pial.nii.gz', help='Cortical ribbon/Gray matter')
         parser.add_argument('-w', '--white', default='./wm.nii.gz', help='White matter')
         parser.add_argument('-o', '--output', default='./', help='Output folder')
+        parser.add_argument('-n', '--level', default="15", help='Noise level')
         args = parser.parse_args()
         output_dir = args.output
+        level = args.level
     else:
         exit()
-    np.random.seed(1234)
+    np.random.seed(12345)
     volume = nib.load(f'{args.pial}')
     pial = volume.get_fdata()
     wm = nib.load(f'{args.white}').get_fdata()
     pial[pial>0] = 1
     wm[wm>0] = 1
-    img = np.random.uniform(-5,+5,wm.shape)*wm+wm*110.0 + np.random.uniform(-10,+10,pial.shape)*pial+pial*50.0
+    level = max(1,float(level))
+    gm_val=60
+    img = np.random.uniform(-5,+5,wm.shape)*wm+wm*110.0 + np.random.uniform(max(-level,-gm_val),+level,pial.shape)*pial+pial*gm_val
     x = nib.Nifti1Image(img, volume.affine, volume.header)
     nib.save(x, f'{output_dir}/brain.finalsurfs.nii.gz')
