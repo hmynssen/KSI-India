@@ -9,7 +9,8 @@ gray_matter_or_cp_vals_string='1'
 non_cortical_vals='0'
 csf_vals='0'
 
-intensity=10
+intensity=1
+noise_level=10
 
 
 ################
@@ -44,4 +45,6 @@ fslmaths "${data_folder}/${extract_brain}" -mul "${data_folder}/${subj}_brain_ma
                         -L "${data_folder}/${lh_mask}" \
                         -P "${results_folder}/pial.nii.gz" \
                         -W "${results_folder}/wm.nii.gz" \
+                        -I ${intensity} \
+                        -n ${noise_level} \
                         -o "${results_folder}"
