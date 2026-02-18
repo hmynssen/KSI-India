@@ -8,17 +8,21 @@ LICENSE_PATH="${HOME}/fs_docker/license.txt"
 PROJECT_PATH="${HOME}/Documents/MetaBio/KSI-India"
 
 # --- Dynamic Input/Output (Assuming you pass these as arguments to the wrapper) ---
-subj='srr_window'
+subj='t26'
 DATA_ROOT_HOST="/media/hmynssen/Data/DATA_India/${subj}"
 OUTPUT_ROOT_HOST="/media/hmynssen/Data/DATA_India/${subj}/NRT-results"
-extract_brain='srr_window_extracted_brain.nii.gz'
-full_label_mask='srr_window-mask-brain_bounti-19.nii.gz'
+extract_brain="${subj}_extracted_brain.nii.gz"
+full_label_mask="tissue-${subj}.00_dhcp-19.nii.gz"
 rh_mask="rh.nii.gz"
 lh_mask="lh.nii.gz"
 
-intensity=0.2
-noise_level=10
-
+intensity=1 #I don't know why but this seems to max out at 1 and after it decreases inflation
+noise_level=20
+# 21 -> i 1 n 20
+# 22 -> i 1 n 20
+# 23 -> i 1 n 20
+# 24 -> i 1 n 20
+# 25 -> i 1 n 20
 
 if ! [ -d "${OUTPUT_ROOT_HOST}" ]; then mkdir "${OUTPUT_ROOT_HOST}"; fi
 # Define container internal mount points

@@ -8,19 +8,21 @@ LICENSE_PATH="${HOME}/fs_docker/license.txt"
 PROJECT_PATH="${HOME}/Documents/MetaBio/KSI-India"
 
 # --- Dynamic Input/Output (Assuming you pass these as arguments to the wrapper) ---
-subj='ssl3'
-DATA_ROOT_HOST="/media/hmynssen/Data/DATA_Nina/${subj}"
-OUTPUT_ROOT_HOST="/media/hmynssen/Data/DATA_Nina/${subj}/NRT-results"
-extract_brain='ssl3.nii.gz'
+subj='SubantarticFurSeal'
+DATA_ROOT_HOST="/media/hmynssen/Data/DATA_Kamilla/${subj}"
+OUTPUT_ROOT_HOST="/media/hmynssen/Data/DATA_Kamilla/${subj}/NRT-results"
+extract_brain='SubantarticFurSeal.nii.gz'
 
-full_label_mask='ssl3_tissue.nii.gz'
+full_label_mask='SubantarticFurSeal_tissue.nii.gz'
 lh_mask_raw='lh_raw.nii.gz'
 gray_matter_or_cp_vals_string='1'
 non_cortical_vals='0'
 csf_vals='0'
 
 intensity=0.2
-noise_level=10
+noise_level=30
+
+if ! [ -d "${OUTPUT_ROOT_HOST}" ]; then mkdir "${OUTPUT_ROOT_HOST}"; fi
 
 # Define container internal mount points
 CONTAINER_DATA_ROOT="/data_input"

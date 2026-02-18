@@ -40,6 +40,16 @@ fslmaths "${data_folder}/${extract_brain}" -mul "${results_folder}/${subj}_brain
                     -C "${csf_vals}"\
                     -o "${results_folder}"
 
+rm ${results_folder}/brain_bin.nii.gz
+rm ${results_folder}/csf_mask.nii.gz
+rm ${results_folder}/lh_pial.nii.gz
+rm ${results_folder}/lh_wm.nii.gz
+rm ${results_folder}/rh_pial.nii.gz
+rm ${results_folder}/rh_wm.nii.gz
+rm ${results_folder}/pial_full.nii.gz
+rm ${results_folder}/non_cortical.nii.gz
+rm ${results_folder}/${subj}_brain_mask.nii.gz
+
 ## freesurfer_surface.sh (Uses relative path inside /project)
 /project/bin/freesurfer_surface.sh -s "${subj}" \
                         -i "${results_folder}/${subj}_extracted_brain.nii.gz" \

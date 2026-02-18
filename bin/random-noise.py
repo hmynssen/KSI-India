@@ -31,7 +31,7 @@ if __name__=="__main__":
     pial[pial>0] = 1
     wm[wm>0] = 1
     level = max(1,float(level))
-    gm_val=60
-    img = np.random.uniform(-5,+5,wm.shape)*wm+wm*110.0 + np.random.uniform(max(-level,-gm_val),+level,pial.shape)*pial+pial*gm_val
+    gm_val=50
+    img = np.random.uniform(-1,+1,wm.shape)*wm+wm*110.0 + np.random.uniform(max(-level,-gm_val),+level,pial.shape)*pial+pial*gm_val
     x = nib.Nifti1Image(img, volume.affine, volume.header)
     nib.save(x, f'{output_dir}/brain.finalsurfs.nii.gz')

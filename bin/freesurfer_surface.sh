@@ -189,6 +189,12 @@ rm -rf "./mri/filled.nii.gz"
 rm -rf "./mri/lh_wm.nii.gz"
 rm -rf "./mri/rh_wm.nii.gz"
 rm -rf "./mri/wm.nii.gz"
+
+mri_convert ./mri/brain.mgz ./mri/brain.nii.gz
+VOX1=$(fslinfo ./mri/brain.nii.gz | grep pixdim1 | awk '{print $2}')
+VOX2=$(fslinfo ./mri/brain.nii.gz | grep pixdim2 | awk '{print $2}')
+VOX3=$(fslinfo ./mri/brain.nii.gz | grep pixdim3 | awk '{print $2}')
+rm -rf "./mri/brain.nii.gz"
 cd surf
 
 for hemi in ${hemispheres[@]}; do
@@ -222,7 +228,7 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo ' '
     echo '----------INFLATE---------'
-    mris_inflate -n 30 -no-save-sulc ${hemi}.smoothwm.nofix ${hemi}.inflated.nofix
+    mris_inflate -n 300 -no-save-sulc ${hemi}.smoothwm.nofix ${hemi}.inflated.nofix
     mris_sphere -q -seed 1234 ${hemi}.inflated.nofix ${hemi}.qsphere.nofix 
     cp ${hemi}.orig.nofix ${hemi}.orig
     cp ${hemi}.inflated.nofix ${hemi}.inflated
@@ -254,7 +260,7 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo ' '
     echo '----------SMOOTH2---------'
-    if [ ${intensity} -gt 1]; then
+    if [ ${intensity} -gt 1 ]; then
         python3 "${KSI}/mesh_smooth.py" -i ${subj}_${hemi}_pial.stl -o "${out_dir}/${subj}/surf" -s ${subj}_${hemi}_pial.stl
     else
         mris_smooth -n 3 -nw ${hemi}.white.preaparc ${hemi}.smoothwm
@@ -292,8 +298,14 @@ for hemi in ${hemispheres[@]}; do
     echo ' '
     echo ' '
     echo '----------PIAL SURFACE---------'
-    #tol=1.0e-04, sigma=2.0, host=unkno, nav=4, nbrs=2, l_repulse=5.000, l_tspring=25.000, l_nspring=1.000, l_intensity=0.200, l_curv=1.000
-    mris_make_surfaces -orig_white white.preaparc -orig_pial white.preaparc -noaseg -noaparc -intensity ${intensity} -mgz -T1 ${hemi}.brain.finalsurfs ${subj} ${hemi}
+    if [[ $(bc <<< "${VOX1} <= 0.5") -eq 1 ]] || [[ $(bc <<< "${VOX2} <= 0.5") -eq 1 ]] || [[ $(bc <<< "${VOX3} <= 0.5") -eq 1 ]]; then
+        ## If the image is smaller than 0.5 mm in any direction, 
+        ##we have to take the non-unitize approach to avoid lack of inflation
+        ##-smooth_pial 1 
+        mris_make_surfaces -N 2000 -orig_white white.preaparc -orig_pial white.preaparc -noaseg -noaparc -no-unitize -repulse 10 -intensity ${intensity} -mgz -T1 ${hemi}.brain.finalsurfs ${subj} ${hemi}
+    else
+        mris_make_surfaces -orig_white white.preaparc -orig_pial white.preaparc -noaseg -noaparc -intensity ${intensity} -mgz -T1 ${hemi}.brain.finalsurfs ${subj} ${hemi}
+    fi
     mris_convert ${hemi}.pial ${subj}_${hemi}_pial.stl
     mris_convert ${hemi}.white ${subj}_${hemi}_wm.stl
     if [ $(bc <<< "${intensity} >= 0.5") -eq 1 ]; then

@@ -14,7 +14,7 @@ import os
 import pymeshlab as ml
 
 
-def simplify_mesh(input_filepath: str, output_filepath: str, max_vertices: int = 100000):
+def simplify_mesh(input_filepath: str, output_filepath: str, max_vertices: int = 500000):
     """
     Loads a mesh, simplifies it if the vertex count exceeds max_vertices,
     and saves the resulting mesh.

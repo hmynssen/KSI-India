@@ -1,8 +1,9 @@
-subj='srr_window'
+subj='t26'
 
 data_folder="/media/hmynssen/Data/DATA_India/${subj}"
-extract_brain="srr_window.nii.gz"
-full_label_mask="srr_window-mask-brain_bounti-19.nii.gz"
+extract_brain="t1-${subj}.00.nii.gz"
+extract_brain="tissue-${subj}.00_dhcp-19.nii.gz"
+full_label_mask="tissue-${subj}.00_dhcp-19.nii.gz"
 
 ##Assuming that BOUNTI produces consistent segmentation masks
 gray_matter_or_cp_vals_string="3 4"
@@ -59,6 +60,8 @@ fslmaths "${data_folder}/${extract_brain}" -mul "${data_folder}/${subj}_brain_ma
                     -C "${csf_vals}"\
                     -o "${data_folder}"
 
+fslmaths "${data_folder}/pial.nii.gz" -add "${data_folder}/wm.nii.gz" -bin -sub "${data_folder}/${lh_mask}" -bin "${data_folder}/${rh_mask}"
+
 rm ${data_folder}/brain_bin.nii.gz
 rm ${data_folder}/csf_mask.nii.gz
 rm ${data_folder}/lh_pial.nii.gz
@@ -69,3 +72,5 @@ rm ${data_folder}/rh_wm.nii.gz
 rm ${data_folder}/pial_full.nii.gz
 rm ${data_folder}/non_cortical.nii.gz
 rm ${data_folder}/${subj}_brain_mask.nii.gz
+
+echo "Finished subject ${subj}"
